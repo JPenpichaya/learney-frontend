@@ -55,6 +55,7 @@ export default function Login() {
 
     return (
         <div className="min-h-screen min-w-screen grid place-items-center bg-[url('/img/BGLogin.svg')] bg-cover">
+            <div className=" absolute min-w-screen min-h-screen opacity-30 bg-[url('/img/LerneyJourneyBgStar.gif')]"></div>
             <div className="p-8 bg-white rounded-4xl shadow-lg w-full max-w-sm text-center justify-items-center">
                 <img src="/img/Learney-Journey_logo.png" alt="" className="max-w-80 object-cover mb-2" />
                 <h1 className="text-2xl  mb-4.5">Login to Start</h1>
