@@ -54,7 +54,7 @@ export default function Login() {
         );
 
     return (
-        <div className="min-h-screen min-w-screen grid place-items-center bg-[url('/img/BGLogin.svg')] bg-cover">
+        <div className="min-h-screen min-w-screen grid place-items-center bg-[url('/img/BGLogin.svg')] bg-cover" id="Login">
             <div className="z-10 absolute min-w-screen min-h-screen opacity-30 bg-[url('/img/LerneyJourneyBgStar.gif')]"></div>
             <div className="p-8 z-50 bg-white rounded-4xl shadow-lg w-full max-w-[20rem] lg:max-w-sm text-center justify-items-center">
                 <img src="/img/Learney-Journey_logo.png" alt="" className="max-w-80 object-cover mb-2" />
