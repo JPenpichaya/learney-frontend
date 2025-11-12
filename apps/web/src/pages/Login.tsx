@@ -33,7 +33,7 @@ export default function Login() {
 
     if (user)
         return (
-            <div className="min-h-screen grid place-items-center bg-neutral-50">
+            <div className="min-h-screen grid place-items-center ">
                 <div className="w-full max-w-5xl">
                     <div className="mb-4 text-center">
                         <div>
@@ -54,21 +54,28 @@ export default function Login() {
         );
 
     return (
-        <div className="min-h-screen grid place-items-center bg-neutral-50">
-            <div className="p-8 bg-white rounded-xl shadow-lg w-full max-w-sm text-center">
-                <h1 className="text-2xl font-semibold mb-6">Sign in to Learney Journey</h1>
-                <div className="space-y-3">
+        <div className="min-h-screen min-w-screen grid place-items-center bg-[url('/img/BGLogin.svg')] bg-cover" id="Login">
+            <div className="z-10 absolute min-w-screen min-h-screen opacity-30 bg-[url('/img/LerneyJourneyBgStar.gif')]"></div>
+            <div className="p-8 z-50 bg-white rounded-4xl shadow-lg w-full max-w-[20rem] lg:max-w-sm text-center justify-items-center">
+                <img src="/img/Learney-Journey_logo.png" alt="" className="max-w-80 object-cover mb-2" />
+                <h1 className="text-2xl  mb-4.5">Login to Start</h1>
+                <div className="space-y-2 mb-2">
                     <button
                         onClick={() => signInWithPopup(auth, google)}
-                        className="w-full border px-4 py-2 rounded hover:bg-gray-50"
-                    >
-                        Continue with Google
+                        className="w-full flex rounded-full shadow-md hover:shadow-lg bg-white ">
+                        <div className=" flex w-full text-center content-center justify-items-center justify-center items-center">
+                            <div className="flex-none w-10"><img src="/img/Google_Icon.svg" alt="" className="w-8" /></div>
+                            <p className="flex-0.5 w-full ml-2 max-w-50 text-start text-sm lg:text-base">Continue with Google</p>
+                        </div>
                     </button>
+                    <p className="text-center font-medium">or</p>
                     <button
                         onClick={() => signInWithPopup(auth, facebook)}
-                        className="w-full border px-4 py-2 rounded hover:bg-gray-50"
-                    >
-                        Continue with Facebook
+                       className="w-full flex border px-4 py-2 rounded-full shadow-md hover:shadow-lg bg-white">
+                        <div className="flex w-full text-center content-center justify-items-center justify-center items-center">
+                         <div className="flex-none w-10"><img src="/img/FaceBook_Icon.svg" alt="" className="w-8 mr-4" /></div>
+                        <p className="flex-0.5 w-full max-w-50 ml-2 text-start text-sm lg:text-base">Continue with Facebook</p>
+                        </div>
                     </button>
                 </div>
             </div>
