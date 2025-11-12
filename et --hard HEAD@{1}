@@ -1,0 +1,35 @@
+[33m26d8325[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{0}: pull --tags origin main: Fast-forward
+[33m1fc6c62[m HEAD@{1}: commit: move env
+[33m342acaf[m HEAD@{2}: commit: up env
+[33mffebb95[m HEAD@{3}: Branch: renamed refs/heads/web to refs/heads/main
+[33mffebb95[m HEAD@{5}: reset: moving to ffebb9543ee556048fa9095dc8d7d48b7911104c
+[33mffebb95[m HEAD@{6}: checkout: moving from web to web
+[33mffebb95[m HEAD@{7}: checkout: moving from main to web
+[33m9ecb457[m HEAD@{8}: checkout: moving from main to main
+[33m9ecb457[m HEAD@{9}: checkout: moving from web to main
+[33mffebb95[m HEAD@{10}: checkout: moving from new-start to web
+[33mbb283fd[m HEAD@{11}: checkout: moving from new-start to new-start
+[33mbb283fd[m HEAD@{12}: commit (initial): new
+[33m9ecb457[m HEAD@{13}: reset: moving to HEAD
+[33m9ecb457[m HEAD@{14}: checkout: moving from web to main
+[33mffebb95[m HEAD@{15}: reset: moving to HEAD
+[33mffebb95[m HEAD@{16}: checkout: moving from main to web
+[33m9ecb457[m HEAD@{17}: checkout: moving from web to main
+[33mffebb95[m HEAD@{18}: checkout: moving from main to web
+[33m9ecb457[m HEAD@{19}: checkout: moving from web-only to main
+[33mf6e273b[m HEAD@{20}: checkout: moving from web to web-only
+[33mffebb95[m HEAD@{21}: checkout: moving from main to web
+[33m9ecb457[m HEAD@{22}: checkout: moving from web-only to main
+[33mf6e273b[m HEAD@{23}: checkout: moving from main to web-only
+[33m9ecb457[m HEAD@{24}: reset: moving to 9ecb4579342dd0613a5ad0a1b0983f4f838b4056
+[33m0610dab[m HEAD@{25}: cherry-pick: Env
+[33m9ecb457[m HEAD@{26}: checkout: moving from f6e273b993443667dffa0ac0818f6298c1eeac56 to main
+[33mf6e273b[m HEAD@{27}: checkout: moving from main to f6e273b993443667dffa0ac0818f6298c1eeac56
+[33m9ecb457[m HEAD@{28}: pull --tags origin main: Fast-forward
+[33mf83bd4e[m HEAD@{29}: checkout: moving from web-only to main
+[33mf6e273b[m HEAD@{30}: checkout: moving from main to web-only
+[33mf83bd4e[m HEAD@{31}: commit: fix bug
+[33m09fb4cb[m HEAD@{32}: pull --tags origin main: Fast-forward
+[33mc23b71a[m HEAD@{33}: pull --tags origin main: Merge made by the 'ort' strategy.
+[33mf6e273b[m HEAD@{34}: commit: Env
+[33mffebb95[m HEAD@{35}: commit (initial): log in video
