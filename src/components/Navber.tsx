@@ -55,7 +55,7 @@ export default function Menubar() {
               className="hover:text-[#EA688E] transition-colors"
             >
               <li className="ibm-plex-sans-thai-light">
-                {lang === "TH" ? "รีวิว" : "Reviews"}
+                {lang === "TH" ? "Test" : "Test"}
               </li>
             </Link>
             <Link to="/call" className="hover:text-[#EA688E] transition-colors">

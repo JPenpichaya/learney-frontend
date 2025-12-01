@@ -42,3 +42,21 @@
   font-weight: 700;
   font-style: normal;
 }
+
+.gradient-text {
+  font-weight: 700;
+  background: linear-gradient(90deg, #F9C6A2, #E9A8B9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-text-light {
+  font-weight: 500;
+  background: linear-gradient(90deg, #F9C6A2, #E9A8B9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.SHtext {
+  text-shadow: black 0em 0em 0.4em;
+}

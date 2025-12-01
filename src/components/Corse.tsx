@@ -1,16 +1,20 @@
-// src/components/Corse.tsx  (หรือ CoursePage.tsx ก็ได้ตามที่ตั้งชื่อไฟล์)
+// src/components/Corse.tsx
 import { useMemo, useState } from "react";
 import Note from "./Note";
 
 /* ---------- Types ---------- */
+export type LessonStatus = "pending" | "current" | "done";
+
 interface Lesson {
   id: number;
   title: string;
+  status: LessonStatus;
   videoUrl: string;
 }
 interface Section {
   id: number;
   title: string;
+  status: string;
   lessons: Lesson[];
 }
 interface Course {
@@ -30,26 +34,31 @@ const mockCourse: Course = {
     {
       id: 1,
       title: "Basic Tense",
+      status: "",
       lessons: [
         {
           id: 1,
           title: "Verb",
           videoUrl: "https://www.youtube.com/watch?v=bMknfKXIFA8",
+          status: "current",
         },
         {
           id: 2,
           title: "Past Simple",
           videoUrl: "https://www.youtube.com/watch?v=w7ejDZ8SWv8",
+          status: "pending",
         },
         {
           id: 3,
           title: "Past Positive",
           videoUrl: "https://www.youtube.com/watch?v=4UZrsTqkcW4",
+          status: "pending",
         },
         {
           id: 4,
           title: "Verb + ing",
           videoUrl: "https://www.youtube.com/watch?v=Ke90Tje7VS0",
+          status: "pending",
         },
       ],
     },
@@ -73,27 +82,62 @@ function extractYouTubeId(urlOrId: string): string {
 }
 
 export default function Corse({ course = mockCourse }: CoursePageProps) {
-  const [currentLesson, setCurrentLesson] = useState<Lesson>(
-    course.sections[0].lessons[0]
-  );
-
-  // flatten ทุก lesson
-  const flatLessons = useMemo<Lesson[]>(
-    () => course.sections.flatMap((s) => s.lessons),
+  // flatten เป็น array เดียว
+  const initialFlatLessons = useMemo<Lesson[]>(
+    () =>
+      course.sections.flatMap((s) =>
+        s.lessons.map((l, idx) => ({
+          ...l,
+          // ถ้าไม่มี status จาก backend ให้เซ็ตเอง
+          status: l.status || (idx === 0 ? "current" : "pending"),
+        }))
+      ),
     [course]
   );
 
-  const currentIndex = flatLessons.findIndex((l) => l.id === currentLesson.id);
+  const [lessonsState, setLessonsState] =
+    useState<Lesson[]>(initialFlatLessons);
+  const [currentLessonId, setCurrentLessonId] = useState<number>(
+    initialFlatLessons[0]?.id ?? 0
+  );
+
+  const currentLesson = useMemo(
+    () => lessonsState.find((l) => l.id === currentLessonId) || lessonsState[0],
+    [lessonsState, currentLessonId]
+  );
+
+  const currentIndex = lessonsState.findIndex((l) => l.id === currentLessonId);
   const isLastLesson =
-    currentIndex >= 0 && currentIndex === flatLessons.length - 1;
+    currentIndex >= 0 && currentIndex === lessonsState.length - 1;
 
   const currentVideoId = extractYouTubeId(currentLesson.videoUrl);
 
-  const goToNextLesson = () => {
-    const idx = flatLessons.findIndex((l) => l.id === currentLesson.id);
+  const setStatusByIndex = (targetIndex: number) => {
+    setLessonsState((prev) =>
+      prev.map((l, idx) => {
+        if (idx < targetIndex) return { ...l, status: "done" };
+        if (idx === targetIndex) return { ...l, status: "current" };
+        return { ...l, status: "pending" };
+      })
+    );
+  };
+
+  const handleSelectLesson = (id: number | string) => {
+    const numericId = typeof id === "string" ? Number(id) : id;
+    const idx = lessonsState.findIndex((l) => l.id === numericId);
     if (idx === -1) return;
-    const next = flatLessons[idx + 1];
-    if (next) setCurrentLesson(next);
+
+    setStatusByIndex(idx);
+    setCurrentLessonId(numericId);
+  };
+
+  const goToNextLesson = () => {
+    if (currentIndex === -1) return;
+    const nextIndex = currentIndex + 1;
+    if (nextIndex >= lessonsState.length) return;
+
+    setStatusByIndex(nextIndex);
+    setCurrentLessonId(lessonsState[nextIndex].id);
   };
 
   return (
@@ -101,20 +145,17 @@ export default function Corse({ course = mockCourse }: CoursePageProps) {
       <div className="flex-1 flex items-center justify-center px-4 mt-10">
         <div className="w-full max-w-screen flex flex-col gap-4 mt-5">
           <Note
-            key={currentLesson.id}
+            key={currentLessonId}
             videoId={currentVideoId}
             videoUrl={currentLesson.videoUrl}
             courseTitle={course.title}
-            lessons={flatLessons.map((l) => ({
+            lessons={lessonsState.map((l) => ({
               id: l.id,
               title: l.title,
+              status: l.status,
             }))}
-            currentLessonId={currentLesson.id}
-            onSelectLesson={(id: number | string) => {
-              const numericId = typeof id === "string" ? Number(id) : id;
-              const next = flatLessons.find((l) => l.id === numericId);
-              if (next) setCurrentLesson(next);
-            }}
+            currentLessonId={currentLessonId}
+            onSelectLesson={handleSelectLesson}
             onNextLesson={goToNextLesson}
             isLastLesson={isLastLesson}
           />

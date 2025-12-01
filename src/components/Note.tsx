@@ -1,5 +1,6 @@
 // src/components/Note.tsx
 import React, { useEffect, useMemo, useRef, useState, useId } from "react";
+import type { LessonStatus } from "./Corse";
 
 /* ---------- Global typings for YT ---------- */
 declare global {
@@ -26,6 +27,7 @@ type Mode = "course" | "note" | "all";
 type LessonOption = {
   id: number | string;
   title: string;
+  status?: LessonStatus; // <-- รับ status มาจากข้างนอก
 };
 
 interface YouTubeNotesProps {
@@ -144,7 +146,7 @@ export default function Note({
       if (!raw) return [];
       const parsed = JSON.parse(raw);
       return Array.isArray(parsed)
-        ? parsed.map((n) => ({
+        ? parsed.map((n: any) => ({
             ...n,
             tags: Array.isArray(n.tags) ? n.tags : [],
           }))
@@ -344,28 +346,46 @@ export default function Note({
     Math.floor(playerRef.current?.getCurrentTime?.() || 0)
   );
 
-  /* progress for header */
+  /* progress / timeline logic ใช้ status */
+  const totalLessons = lessons?.length ?? 0;
+
   let progressPercent = 0;
+  let lastDoneIndex = -1;
+  let doneCount = 0;
   let currentIndex = -1;
-  if (lessons && lessons.length > 0 && currentLessonId != null) {
-    currentIndex = lessons.findIndex(
-      (l) => String(l.id) === String(currentLessonId)
-    );
-    const completed = currentIndex >= 0 ? currentIndex + 1 : 0;
+
+  if (lessons && totalLessons > 0) {
+    lessons.forEach((lesson, idx) => {
+      const s = lesson.status;
+      if (s === "done") {
+        doneCount += 1;
+        lastDoneIndex = idx;
+      }
+      if (s === "current") {
+        currentIndex = idx;
+      }
+    });
+
+    const headerCompleted = doneCount + (currentIndex >= 0 ? 1 : 0);
     progressPercent = Math.round(
-      Math.min(100, Math.max(0, (completed / lessons.length) * 100))
+      Math.min(100, Math.max(0, (headerCompleted / totalLessons) * 100))
     );
   }
 
-  const headerLabel = courseTitle
-    ? `${courseTitle} ${progressPercent}%`
-    : "PROGRESS";
+  const NODE_GAP = 56;
+  const FIRST_CENTER_OFFSET = 28;
+
+  const baseLineHeight =
+    totalLessons > 0 ? FIRST_CENTER_OFFSET + NODE_GAP * (totalLessons - 1) : 0;
+
+  const progressLineHeight =
+    lastDoneIndex >= 0 ? FIRST_CENTER_OFFSET + NODE_GAP * lastDoneIndex : 0;
 
   /* ============================================================== */
   return (
     <div className="flex min-h-screen w-full items-stretch gap-4">
       {/* LEFT — VIDEO */}
-      <div className="flex-1 p-10 pl-20 min-w-0 flex flex-col items-center">
+      <div className="flex-1 p-10 pl-20 min-w-0 flex flex-col items-center ">
         <div className="w-full max-w-[70rem]">
           <div
             id={containerId}
@@ -374,15 +394,15 @@ export default function Note({
         </div>
 
         {/* NEXT BUTTON */}
-        <div className="mt-6">
+        <div className="mt-6 ml-215">
           <button
             onClick={onNextLesson}
             disabled={isLastLesson}
             className={[
-              "px-10 py-3 rounded-full text-lg font-semibold transition",
+              "px-8 py-3 rounded-full  text-lg font-semibold transition",
               isLastLesson
                 ? "bg-gray-400 cursor-not-allowed text-white"
-                : "bg-[#DD81B8] hover:bg-pink-500 text-[#070D2D] shadow-lg shadow-pink-500/40",
+                : "bg-[#DD81B8] hover:bg-pink-500 text-white shadow-lg shadow-pink-500/40",
             ].join(" ")}
           >
             {isLastLesson ? "คุณดูครบทุกคลิปแล้ว" : "Next Video"}
@@ -402,7 +422,7 @@ export default function Note({
 
         {panelOpen && (
           <aside className="w-80 pt-10 h-full items-center bg-[#23213B] p-4 flex flex-col">
-            {/* MODE BUTTONS (อยู่ด้านบนสุด) */}
+            {/* MODE BUTTONS */}
             <div className="flex justify-end gap-2  mb-4">
               <button
                 onClick={() => setMode("course")}
@@ -428,7 +448,7 @@ export default function Note({
                 onClick={() => setMode("all")}
                 className={`px-4 py-1 rounded-full text-sm font-medium ${
                   mode === "all"
-                    ? "bg-[#FFEE91] text-[#464B9F]"
+                    ? "bg[#FFEE91] text-[#FF7C92]"
                     : "bg-[#DD81B8] text-white/90"
                 }`}
               >
@@ -436,16 +456,14 @@ export default function Note({
               </button>
             </div>
 
-            {/* ====== COURSE HEADER + PROGRESS BAR (อยู่ใต้ปุ่ม) ====== */}
+            {/* ====== COURSE / TIMELINE ====== */}
             {mode === "course" && lessons && lessons.length > 0 && (
               <div className="w-full mb-4 px-4">
-                <div className=" flex flex-col items-center justify-center py-3">
+                <div className="flex flex-col items-center justify-center py-3">
                   <span className="text-white font-semibold text-3xl">
                     PROGRESS
                   </span>
 
-                  {/* ขีดใต้ข้อความ */}
-                  {/* bar ด้านบนที่กินตามเปอร์เซ็นต์ */}
                   <div className="w-full h-1.5 bg-[#464B9F] mt-2 rounded-full ">
                     <div
                       className="h-full bg-[#F6F14F] transition-all rounded-full duration-500"
@@ -454,52 +472,95 @@ export default function Note({
                   </div>
                 </div>
 
-                {/* ปุ่มบทเรียน */}
-                <div className="mt-4">
+                <div className="relative mt-6 pl-10 ">
+                  {/* หลอดเปล่า (track) #464B9F — สูงเท่า baseLineHeight ไม่เกินข้อท้าย */}
+                  {baseLineHeight > 0 && (
+                    <div
+                      className="absolute left-6 top-3 w-[3px] bg-[#464B9F] rounded-full translate-x-1/2 z-0"
+                      style={{ height: baseLineHeight }}
+                    />
+                  )}
+
+                  {/* เส้นพื้น (ยังไม่เรียน) #FFEE91 */}
+                  {baseLineHeight > 0 && (
+                    <div
+                      className="absolute left-6 top-3 w-[3px] bg-[#FFEE91] rounded-full translate-x-1/2 z-0"
+                      style={{ height: baseLineHeight }}
+                    />
+                  )}
+
+                  {/* เส้น progress (เรียนเสร็จแล้ว) #FF7C92 */}
+                  {progressLineHeight > 0 && (
+                    <div
+                      className="absolute left-6 top-4 w-[3px] bg-[#FF7C92] rounded-full translate-x-1/2 transition-all duration-500 z-0"
+                      style={{ height: progressLineHeight }}
+                    />
+                  )}
+
                   {lessons.map((lesson, idx) => {
-                    const isCurrent =
+                    const fallbackCurrent =
                       currentLessonId != null &&
                       String(lesson.id) === String(currentLessonId);
-                    const isDone = currentIndex >= 0 && idx < currentIndex;
 
-                    const dotColors = [
-                      "bg-[#FF8BA7]",
-                      "bg-[#FFE066]",
-                      "bg-[#9D8CFF]",
-                      "bg-[#4D6CFA]",
-                    ];
-                    const dotColor =
-                      dotColors[idx % dotColors.length] || "bg-[#9D8CFF]";
+                    const status: LessonStatus =
+                      (lesson.status as LessonStatus | undefined) ||
+                      (fallbackCurrent ? "current" : "pending");
+
+                    let circleBg = "#464B9F";
+                    let titleColor = "#FFFFFF";
+                    let labelText: string | null = null;
+                    let labelColor = "#FFFFFF";
+
+                    if (status === "done") {
+                      circleBg = "#FF7C92";
+                      titleColor = "#FF7C92";
+                      labelText = "ทำแล้ว";
+                      labelColor = "#FF7C92";
+                    } else if (status === "current") {
+                      circleBg = "#FFEE91";
+                      titleColor = "#FFEE91";
+                      labelText = "(กำลังเรียน)";
+                      labelColor = "#FFEE91";
+                    }
+
+                    const circleTextColor =
+                      status === "done" || status === "current"
+                        ? "#2A1330"
+                        : "#FFEE91";
 
                     return (
                       <button
                         key={lesson.id}
                         onClick={() => onSelectLesson?.(lesson.id)}
-                        className={[
-                          "w-full flex items-center gap-3 px-3 py-2 rounded-full mb-2 text-sm transition",
-                          isCurrent
-                            ? "bg-[#3B356C] text-white font-semibold"
-                            : isDone
-                            ? " text-white/90"
-                            : "bg-[#221F3F] text-white/80 hover:bg-[#2E2A55]",
-                        ].join(" ")}
+                        className="relative w-full flex items-start gap-3 py-5 text-left"
                       >
                         <span
-                          className={[
-                            "w-4 h-4 rounded-full border-2 border-[#4D4FAE]",
-                            dotColor,
-                          ].join(" ")}
-                        />
-                        <span className="flex-1 text-left">{lesson.title}</span>
-                        {isCurrent ? (
-                          <span className="text-xs text-pink-200">
-                            (กำลังเรียน)
-                          </span>
-                        ) : isDone ? (
-                          <span className="text-xs text-emerald-300">
-                            ทำแล้ว
-                          </span>
-                        ) : null}
+                          className="absolute -ml-9.5 left-6 -translate-x-1/2 top-1 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-md z-10"
+                          style={{
+                            backgroundColor: circleBg,
+                            color: circleTextColor,
+                          }}
+                        >
+                          {idx + 1}
+                        </span>
+
+                        <div className="ml-13">
+                          <div
+                            className="text-sm"
+                            style={{ color: titleColor }}
+                          >
+                            {lesson.title}
+                          </div>
+
+                          {labelText && (
+                            <div
+                              className="text-xs"
+                              style={{ color: labelColor }}
+                            >
+                              {labelText}
+                            </div>
+                          )}
+                        </div>
                       </button>
                     );
                   })}
@@ -509,13 +570,15 @@ export default function Note({
 
             {/* NOTE / ALL NOTE CONTENT */}
             {mode === "note" ? (
-              <div className="flex flex-col flex-1 w-full p-4">
-                <h3 className="text-xl font-semibold mb-2 text-white">
+              <div className="flex flex-col flex-1  max-w-[18rem] min-w-full p-4">
+                <h3 className="text-3xl  text-center font-light mb-2 text-white">
                   Note It
                 </h3>
 
-                <div className="inline-flex items-center justify-center px-4 py-1 rounded-full text-xs font-medium bg-[#f2a1c0] text-[#2a1330] mb-3">
-                  Time: {currentTimeStamp}
+                <div className="inline-flex text-center max-w-[8rem] content-end ml-32 mt-1 px-2 w-full py-2 rounded-full text-sm font-medium bg-[#464B9F] text-white mb-2">
+                  <p className=" text-center w-full">
+                    Time: {currentTimeStamp}
+                  </p>
                 </div>
 
                 <label className="text-sm text-white mb-1">Your Note</label>
@@ -553,7 +616,7 @@ export default function Note({
               </div>
             ) : mode === "all" ? (
               <div className="flex flex-col flex-1 w-full p-4">
-                <h3 className="text-xl font-semibold mb-3 text-white">
+                <h3 className="text-3xl text-center font-light mb-3 text-white">
                   All Note
                 </h3>
 
