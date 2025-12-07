@@ -1,5 +1,29 @@
 @import "tailwindcss";
 
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scrollbar-width: none;
+
+}
+
+h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+
+.Head1 {
+  font-size: 2.6rem;
+  font-weight: 600;
+}
 
 .ibm-plex-sans-thai-thin {
   font-family: "IBM Plex Sans Thai", sans-serif;

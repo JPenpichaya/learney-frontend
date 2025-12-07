@@ -10,7 +10,9 @@ interface Lesson {
   title: string;
   status: LessonStatus;
   videoUrl: string;
+  parentId?: number; // ✅ เพิ่มบรรทัดนี้
 }
+
 interface Section {
   id: number;
   title: string;
@@ -50,14 +52,22 @@ const mockCourse: Course = {
         },
         {
           id: 3,
-          title: "Past Positive",
+          title: "Past Positive (detail 1)",
           videoUrl: "https://www.youtube.com/watch?v=4UZrsTqkcW4",
           status: "pending",
+          parentId: 2, // ✅ เป็นย่อยของ Past Simple
         },
         {
           id: 4,
-          title: "Verb + ing",
+          title: "Past Positive (detail 2)",
           videoUrl: "https://www.youtube.com/watch?v=Ke90Tje7VS0",
+          status: "pending",
+          parentId: 2, // ✅ ย่อยของ Past Simple เช่นกัน
+        },
+        {
+          id: 5,
+          title: "Past Simple",
+          videoUrl: "https://youtu.be/KibYIyEOjkE?si=r4WgXzwXADo03_aW",
           status: "pending",
         },
       ],
@@ -153,6 +163,7 @@ export default function Corse({ course = mockCourse }: CoursePageProps) {
               id: l.id,
               title: l.title,
               status: l.status,
+              parentId: l.parentId,
             }))}
             currentLessonId={currentLessonId}
             onSelectLesson={handleSelectLesson}

@@ -1,5 +1,156 @@
+ช่วยแก้ไข้สไตล์โค้ด react อยากให้โหมด course
+- สามารถมีหัวข้อหลักหัวข้อรองได้เหมือนในภาพ หัวข้อ 1 สามารถมีย่อยได้อีก 
+[
+    1 verb
+    2 Past simple 
+        2.1 Past Positive detail for video a little about this video
+        2.2 Past Positive detail for video a little about this video 
+]
+
+- [ ทำให้ ไม่เกินข้อสุดท้ายของเนื้อหา 
+    {baseLineHeight > 0 && (
+        <div
+            className="absolute left-6 top-3 w-[3px] bg-[#464B9F] rounded-full translate-x-1/2 z-0"
+            style={{ height: baseLineHeight }}
+        />
+        )}
+
+        {/* เส้นพื้น (ยังไม่เรียน) #FFEE91 */}
+        {baseLineHeight > 0 && (
+        <div
+            className="absolute left-6 top-3 w-[3px] bg-[#FFEE91] rounded-full translate-x-1/2 z-0"
+            style={{ height: baseLineHeight }}
+        />
+        )}
+
+        {/* เส้น progress (เรียนเสร็จแล้ว) #FF7C92 */}
+        {progressLineHeight > 0 && (
+        <div
+            className="absolute left-6 top-4 w-[3px] bg-[#FF7C92] rounded-full translate-x-1/2 transition-all duration-500 z-0"
+            style={{ height: progressLineHeight }}
+        />
+        )}
+    ] 
+- สีของเส้นที่กำลังเรียน หรือ เสร็จแล้ว ให้อยู่ในช่วงขอช่วงนั้นห้ามเลยออกมา
+- #FFEE91 แปลว่ากำลังเรียน #464B9F แปลว่ายังไม่เรียน, #FF7C92 แปลว่าเรียนเสร็จแล้ว
+- 
+
+[โค้ดโหมด]
+{mode === "course" && lessons && lessons.length > 0 && (
+              <div className="w-full mb-4 px-4">
+                <div className="flex flex-col items-center justify-center py-3">
+                  <span className="text-white font-semibold text-3xl">
+                    PROGRESS
+                  </span>
+
+                  <div className="w-full h-1.5 bg-[#464B9F] mt-2 rounded-full ">
+                    <div
+                      className="h-full bg-[#F6F14F] transition-all rounded-full duration-500"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="relative mt-6 pl-10 ">
+                  {/* หลอดเปล่า (track) #464B9F — สูงเท่า baseLineHeight ไม่เกินข้อท้าย */}
+                  {baseLineHeight > 0 && (
+                    <div
+                      className="absolute left-6 top-3 w-[3px] bg-[#464B9F] rounded-full translate-x-1/2 z-0"
+                      style={{ height: baseLineHeight }}
+                    />
+                  )}
+
+                  {/* เส้นพื้น (ยังไม่เรียน) #FFEE91 */}
+                  {baseLineHeight > 0 && (
+                    <div
+                      className="absolute left-6 top-3 w-[3px] bg-[#FFEE91] rounded-full translate-x-1/2 z-0"
+                      style={{ height: baseLineHeight }}
+                    />
+                  )}
+
+                  {/* เส้น progress (เรียนเสร็จแล้ว) #FF7C92 */}
+                  {progressLineHeight > 0 && (
+                    <div
+                      className="absolute left-6 top-4 w-[3px] bg-[#FF7C92] rounded-full translate-x-1/2 transition-all duration-500 z-0"
+                      style={{ height: progressLineHeight }}
+                    />
+                  )}
+
+                  {lessons.map((lesson, idx) => {
+                    const fallbackCurrent =
+                      currentLessonId != null &&
+                      String(lesson.id) === String(currentLessonId);
+
+                    const status: LessonStatus =
+                      (lesson.status as LessonStatus | undefined) ||
+                      (fallbackCurrent ? "current" : "pending");
+
+                    let circleBg = "#464B9F";
+                    let titleColor = "#FFFFFF";
+                    let labelText: string | null = null;
+                    let labelColor = "#FFFFFF";
+
+                    if (status === "done") {
+                      circleBg = "#FF7C92";
+                      titleColor = "#FF7C92";
+                      labelText = "ทำแล้ว";
+                      labelColor = "#FF7C92";
+                    } else if (status === "current") {
+                      circleBg = "#FFEE91";
+                      titleColor = "#FFEE91";
+                      labelText = "(กำลังเรียน)";
+                      labelColor = "#FFEE91";
+                    }
+
+                    const circleTextColor =
+                      status === "done" || status === "current"
+                        ? "#2A1330"
+                        : "#FFEE91";
+
+                    return (
+                      <button
+                        key={lesson.id}
+                        onClick={() => onSelectLesson?.(lesson.id)}
+                        className="relative w-full flex items-start gap-3 py-5 text-left"
+                      >
+                        <span
+                          className="absolute -ml-9.5 left-6 -translate-x-1/2 top-1 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-md z-10"
+                          style={{
+                            backgroundColor: circleBg,
+                            color: circleTextColor,
+                          }}
+                        >
+                          {idx + 1}
+                        </span>
+
+                        <div className="ml-13">
+                          <div
+                            className="text-sm"
+                            style={{ color: titleColor }}
+                          >
+                            {lesson.title}
+                          </div>
+
+                          {labelText && (
+                            <div
+                              className="text-xs"
+                              style={{ color: labelColor }}
+                            >
+                              {labelText}
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+
+โค้ดทั้งหมด
 // src/components/Note.tsx
-import { useEffect, useMemo, useRef, useState, useId } from "react";
+import React, { useEffect, useMemo, useRef, useState, useId } from "react";
 import type { LessonStatus } from "./Corse";
 
 /* ---------- Global typings for YT ---------- */
@@ -28,15 +179,6 @@ type LessonOption = {
   id: number | string;
   title: string;
   status?: LessonStatus;
-  /** ถ้ามี parentId แปลว่าเป็นหัวข้อย่อยของ lesson นั้น */
-  parentId?: number | string;
-};
-
-type DisplayLesson = {
-  lesson: LessonOption;
-  depth: 0 | 1; // 0 = main, 1 = sub
-  indexLabel: string; // "1", "2", "2.1", ...
-  status: LessonStatus;
 };
 
 interface YouTubeNotesProps {
@@ -355,105 +497,44 @@ export default function Note({
     Math.floor(playerRef.current?.getCurrentTime?.() || 0)
   );
 
-  /* progress / timeline logic (ใช้ displayLessons รวม main + sub) */
-  const displayLessons: DisplayLesson[] = useMemo(() => {
-    if (!lessons || lessons.length === 0) return [];
+  /* progress / timeline logic ใช้ status */
+  const totalLessons = lessons?.length ?? 0;
 
-    const makeStatus = (lesson: LessonOption): LessonStatus => {
-      const fallbackCurrent =
-        currentLessonId != null &&
-        String(lesson.id) === String(currentLessonId);
-
-      return (
-        (lesson.status as LessonStatus | undefined) ||
-        (fallbackCurrent ? "current" : "pending")
-      );
-    };
-
-    // group ตาม parentId
-    const childrenMap = new Map<string, LessonOption[]>();
-    for (const l of lessons) {
-      if (l.parentId != null) {
-        const key = String(l.parentId);
-        if (!childrenMap.has(key)) childrenMap.set(key, []);
-        childrenMap.get(key)!.push(l);
-      }
-    }
-
-    const roots = lessons.filter((l) => l.parentId == null);
-
-    const result: DisplayLesson[] = [];
-    roots.forEach((root, rootIdx) => {
-      const mainNo = rootIdx + 1;
-
-      // main topic
-      result.push({
-        lesson: root,
-        depth: 0,
-        indexLabel: String(mainNo),
-        status: makeStatus(root),
-      });
-
-      // sub topics
-      const children = childrenMap.get(String(root.id)) ?? [];
-      children.forEach((child, childIdx) => {
-        result.push({
-          lesson: child,
-          depth: 1,
-          indexLabel: `${mainNo}.${childIdx + 1}`,
-          status: makeStatus(child),
-        });
-      });
-    });
-
-    return result;
-  }, [lessons, currentLessonId]);
-
-  const totalNodes = displayLessons.length;
-
-  let doneCount = 0;
+  let progressPercent = 0;
   let lastDoneIndex = -1;
+  let doneCount = 0;
   let currentIndex = -1;
 
-  displayLessons.forEach((node, idx) => {
-    if (node.status === "done") {
-      doneCount += 1;
-      lastDoneIndex = idx;
-    }
-    if (node.status === "current") {
-      currentIndex = idx;
-    }
-  });
+  if (lessons && totalLessons > 0) {
+    lessons.forEach((lesson, idx) => {
+      const s = lesson.status;
+      if (s === "done") {
+        doneCount += 1;
+        lastDoneIndex = idx;
+      }
+      if (s === "current") {
+        currentIndex = idx;
+      }
+    });
 
-  // bar ด้านบน (PROGRESS) ใช้รวม done + current
-  let progressPercent = 0;
-  if (totalNodes > 0) {
     const headerCompleted = doneCount + (currentIndex >= 0 ? 1 : 0);
     progressPercent = Math.round(
-      Math.min(100, Math.max(0, (headerCompleted / totalNodes) * 100))
+      Math.min(100, Math.max(0, (headerCompleted / totalLessons) * 100))
     );
   }
 
-  // ใช้สัดส่วน (0–100%) แทนการล็อก px เพื่อให้ยืดหยุ่นตามความสูงจริง
-  const hasMultiNodes = totalNodes > 1;
+  // % ที่เรียนจบ (ใช้เฉพาะ status = "done")
+  const completionPercent =
+    totalLessons > 0 ? Math.round((doneCount / totalLessons) * 100) : 0;
 
-  const doneRatio =
-    hasMultiNodes && lastDoneIndex >= 0 ? lastDoneIndex / (totalNodes - 1) : 0;
+  const NODE_GAP = 56;
+  const FIRST_CENTER_OFFSET = 28;
 
-  const currentRatio =
-    hasMultiNodes && currentIndex >= 0
-      ? currentIndex / (totalNodes - 1)
-      : doneRatio;
+  const baseLineHeight =
+    totalLessons > 0 ? FIRST_CENTER_OFFSET + NODE_GAP * (totalLessons - 1) : 0;
 
-  // 👇 ตัวคูณลดสเกล (ลอง 0.75–0.85 แล้วดูที่ชอบ)
-  const SCALE = 0.8;
-
-  const donePercent = Math.max(0, Math.min(100, doneRatio * 100 * SCALE));
-  const currentStartPercent = donePercent;
-  const currentHeightPercent = Math.max(
-    0,
-    Math.min(100, currentRatio * 100 * SCALE - donePercent)
-  );
+  const progressLineHeight =
+    lastDoneIndex >= 0 ? FIRST_CENTER_OFFSET + NODE_GAP * lastDoneIndex : 0;
 
   /* ============================================================== */
   return (
@@ -531,9 +612,9 @@ export default function Note({
             </div>
 
             {/* ====== COURSE / TIMELINE ====== */}
-            {mode === "course" && displayLessons.length > 0 && (
+            {mode === "course" && lessons && lessons.length > 0 && (
               <div className="w-full mb-4 px-4">
-                {/* HEADER PROGRESS */}
+                {/* HEADER English 25% */}
                 <div className="flex flex-col items-center justify-center py-3">
                   <span className="text-white font-semibold text-3xl">
                     PROGRESS
@@ -549,56 +630,50 @@ export default function Note({
 
                 {/* TIMELINE */}
                 <div className="relative mt-6 pl-10 pb-4">
-                  {/* เส้นพื้นของทุกหัวข้อ = ยังไม่เรียน #464B9F */}
-                  {totalNodes > 0 && (
-                    <div className="absolute left-6 top-3 bottom-3 w-[3px] rounded-full translate-x-1/2 z-0 bg-[#464B9F]" />
-                  )}
-
-                  {/* เส้นเรียนจบแล้ว #FF7C92 */}
-                  {donePercent > 0 && (
+                  {/* หลอดเปล่า (track) ไม่เกินข้อท้าย */}
+                  {baseLineHeight > 0 && (
                     <div
-                      className="absolute left-6 top-3 w-[3px] rounded-full translate-x-1/2 z-0 bg-[#FF7C92] transition-all duration-500"
-                      style={{ height: `${donePercent}%` }}
+                      className="absolute left-6 top-3 w-[3px] bg-[#3E336F] rounded-full translate-x-1/2 z-0"
+                      style={{ height: baseLineHeight }}
                     />
                   )}
 
-                  {/* เส้นกำลังเรียน #FFEE91 */}
-                  {currentHeightPercent > 0 && (
+                  {/* เส้น progress (done) */}
+                  {progressLineHeight > 0 && (
                     <div
-                      className="absolute left-6 translate-x-1/2 w-[3px] rounded-full z-0 bg-[#FFEE91] transition-all duration-500"
-                      style={{
-                        top: `calc(3px + ${currentStartPercent}%)`,
-                        height: `${currentHeightPercent}%`,
-                      }}
+                      className="absolute left-6 top-3 w-[3px] bg-[#F6F14F] rounded-full translate-x-1/2 transition-all duration-500 z-0"
+                      style={{ height: progressLineHeight }}
                     />
                   )}
 
-                  {/* NODES */}
-                  {displayLessons.map((node) => {
-                    const { lesson, depth, indexLabel, status } = node;
+                  {lessons.map((lesson, idx) => {
+                    const fallbackCurrent =
+                      currentLessonId != null &&
+                      String(lesson.id) === String(currentLessonId);
 
-                    let circleBg = "#464B9F"; // pending
+                    const status: LessonStatus =
+                      (lesson.status as LessonStatus | undefined) ||
+                      (fallbackCurrent ? "current" : "pending");
+
+                    let circleBg = "#5F4BC0"; // pending
                     let titleColor = "#FFFFFF";
                     let labelText: string | null = null;
                     let labelColor = "#FFFFFF";
 
                     if (status === "done") {
-                      circleBg = "#FF7C92";
-                      titleColor = "#FF7C92";
-                      labelColor = "#FF7C92";
+                      circleBg = "#F6F14F";
+                      titleColor = "#F6F14F";
                     } else if (status === "current") {
-                      circleBg = "#FFEE91";
-                      titleColor = "#FFEE91";
+                      circleBg = "#F6F14F";
+                      titleColor = "#F6F14F";
                       labelText = "(กำลังเรียน)";
-                      labelColor = "#FFEE91";
+                      labelColor = "#F6F14F";
                     }
 
                     const circleTextColor =
                       status === "done" || status === "current"
                         ? "#2A1330"
-                        : "#FFEE91";
-
-                    const isChild = depth === 1;
+                        : "#FFFFFF";
 
                     return (
                       <button
@@ -607,31 +682,22 @@ export default function Note({
                         className="relative w-full flex items-start gap-3 py-4 text-left"
                       >
                         {/* จุดบนเส้น */}
-                        {isChild ? (
-                          <span
-                            className="absolute -ml-9.5 left-6 -translate-x-1/2 top-2 w-3 h-3 rounded-full z-10 shadow-md"
-                            style={{ backgroundColor: circleBg }}
-                          />
-                        ) : (
-                          <span
-                            className="absolute -ml-9.5 left-6 -translate-x-1/2 top-1 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-md z-10"
-                            style={{
-                              backgroundColor: circleBg,
-                              color: circleTextColor,
-                            }}
-                          >
-                            {indexLabel}
-                          </span>
-                        )}
+                        <span
+                          className="absolute -ml-9.5 left-6 -translate-x-1/2 top-1 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-md z-10"
+                          style={{
+                            backgroundColor: circleBg,
+                            color: circleTextColor,
+                          }}
+                        >
+                          {idx + 1}
+                        </span>
 
-                        <div className={isChild ? "ml-11" : "ml-13"}>
+                        <div className="ml-13">
                           <div
-                            className={isChild ? "text-xs" : "text-sm"}
+                            className="text-sm"
                             style={{ color: titleColor }}
                           >
-                            {isChild
-                              ? `${indexLabel} ${lesson.title}`
-                              : lesson.title}
+                            {lesson.title}
                           </div>
 
                           {labelText && (

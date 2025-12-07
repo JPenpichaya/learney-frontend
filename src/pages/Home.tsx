@@ -1,18 +1,18 @@
+import { useRef } from "react";
+
 function Intro() {
   return (
     <div className="max-w-screen min-w-full min-h-full py-5 max-h-screen flex content-center text-center">
       <div className="flex-[0.5] w-full py-10 pl-20">
         <img
-          src=".\img\imgHome\P-ying.svg"
+          src="./img/imgHome/P-ying.svg"
           alt=""
           className="w-full h-full ml-10 rounded-xl border-4 border-[#F0DA6F] object-cover"
         />
       </div>
       <div className="flex-auto p-10 flex flex-col justify-center content-center items-center text-center space-y-5">
         <div className="flex flex-col px-10 bg-[#23213B] min-w-[90%] min-h-full max-w-[20rem] rounded-xl ">
-          <h1 className=" text-4xl font-semibold my-8 mt-15 ">
-            Master Your Learning Journey
-          </h1>
+          <h1 className="Head1 my-8 mt-15">Master Your Learning Journey</h1>
           <p className="text-start mb-4">
             ก้าวสู่การพัฒนาทักษะอย่างมั่นใจด้วยคอร์สที่ออกแบบอย่างพิถีพิถันเรียบเรียง
             เนื้อหาและถ่ายทอดโดยผู้เชี่ยวชาญในสาขาต่าง ๆ พร้อมเนื้อหาที่เหมาะกับ
@@ -20,20 +20,16 @@ function Intro() {
             ท่านจะได้พบกับหลักสูตรที่เข้าใจง่ายและเหมาะสำหรับการเรียนรู้อย่างเป็นระบบ
             และสามารถนำไปใช้ได้จริงในชีวิตประจำวันและการทำงาน
           </p>
-          <h1 className="text-start">คุณจะได้รับ :</h1>
+          <p className="text-start">คุณจะได้รับ :</p>
           <ul className="text-start list-disc pl-8">
-            <li className=" ">
-              ความแม่นยำ ในเนื้อหาที่ใช้งานได้จริง ไม่ซับซ้อน
-            </li>
-            <li className="">
+            <li>ความแม่นยำ ในเนื้อหาที่ใช้งานได้จริง ไม่ซับซ้อน</li>
+            <li>
               ความอุ่นใจ จากการดูแลโดยผู้สอนที่เข้าใจปัญหา และมีประสบการณ์จริง
             </li>
-            <li className="">
-              ความภาคภูมิใจ ในทักษะที่ช่วยเปิดโอกาสในสายอาชีพ
-            </li>
+            <li>ความภาคภูมิใจ ในทักษะที่ช่วยเปิดโอกาสในสายอาชีพ</li>
           </ul>
           <div className="min-w-full ml-70 h-full justify-center-safe items-center content-center ">
-            <button className=" px-10 text-2xl flex items-center justify-center  rounded-full  py-4 bg-gradient-to-r from-[#464B9F] via-[#EA688E] to-[#F1F069]">
+            <button className="px-10 text-2xl flex items-center justify-center rounded-full py-4 bg-gradient-to-r from-[#464B9F] via-[#EA688E] to-[#F1F069]">
               <p className="align-middle text-center mt-1 font-bold SHtext">
                 สมัครเรียนตอนนี้
               </p>
@@ -45,19 +41,313 @@ function Intro() {
   );
 }
 
-function Space() {
-  return <div className="w-screen h-screen"></div>;
+function Detail() {
+  return (
+    <div className="w-screen min-h-screen p-10 pt-20 flex flex-col">
+      <h1 className="Head1 text-center text-[#FBB1A9] mb-10">จุดเด่นของเรา</h1>
+
+      <div className="flex my-10">
+        <div className="flex-1 w-full pr-10 justify-items-end ">
+          <img src="/img/icon/Teacher_icon.svg" alt="" className="max-w-35" />
+        </div>
+        <div className="flex-auto text-start pt-5">
+          <h2 className="mb-2">ครูผู้สอนมืออาชีพ</h2>
+          <p className="max-w-100">
+            ทีมผู้สอนที่มีประสบการณ์จริงในหลากหลายสาขา
+            <br />
+            ถ่ายทอดความรู้ด้วยวิธีที่เข้าใจง่ายและเป็นขั้นตอน
+          </p>
+        </div>
+      </div>
+
+      <div className="flex my-10">
+        <div className="flex-auto text-start pt-5 justify-items-end">
+          <div>
+            <h2 className="mb-2">หลักสูตรคุณภาพ</h2>
+            <p className="max-w-100">
+              ทุกบทเรียนถูกออกแบบอย่างพิถีพิถันเพื่อช่วย
+              ให้ผู้เรียนเข้าใจเนื้อหาและนำไปใช้ได้อย่างมี
+              ประสิทธิภาพในเวลาที่คุ้มค่า
+            </p>
+          </div>
+        </div>
+        <div className="flex-1 w-full pl-10 justify-items-strat">
+          <img src="/img/icon/verified_icon.svg" alt="" className="max-w-35" />
+        </div>
+      </div>
+
+      <div className="flex my-10">
+        <div className="flex-1 w-full pl-10 pr-10 justify-items-end">
+          <img src="/img/icon/wirte_icon.svg" alt="" className="max-w-30" />
+        </div>
+        <div className="flex-auto text-start pt-5">
+          <h2 className="mb-2">เรียนรู้ตามจังหวะของคุณ</h2>
+          <p className="max-w-100">
+            เข้าเรียนได้ทุกที่ทุกเวลาพร้อมปรับรูปแบบการเรียน
+            ตามความสะดวกของแต่ละคน
+          </p>
+        </div>
+      </div>
+
+      <div className="flex my-10">
+        <div className="flex-auto text-start pt-5 justify-items-end">
+          <div className="pr-10">
+            <h2 className="mb-2">ชุมชนผู้เรียน</h2>
+            <p className="max-w-100">
+              เชื่อมต่อกับผู้เรียนคนอื่นๆและแลกเปลี่ยนประสบการณ์
+              <br />
+              เพื่อเติบโตไปด้วยกัน
+            </p>
+          </div>
+        </div>
+        <div className="flex-1 w-full pl-10 justify-items-strat">
+          <img
+            src="/img/icon/conversation_icon.svg"
+            alt=""
+            className="max-w-35"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Coures() {
+  return (
+    <div className="w-screen min-h-screen p-10 pt-20 flex flex-col">
+      <h1 className="Head1 text-center text-[#FBB1A9] mb-4">คอร์สเรียน</h1>
+      <div className="flex flex-col w-full px-80">
+        <div className="w-full flex justify-end pr-5">
+          <button className="px-6 border-2 py-0.5 rounded-full">
+            คอร์สเรียนทั้งหมด
+          </button>
+        </div>
+        <div className="flex max-h-130">
+          <div className="flex-auto px-5 py-5">
+            <div className="w-full rounded-xl h-130 border-2 border-[#F1F069] bg-[#23213B]" />
+          </div>
+          <div className="flex-auto px-5 py-5">
+            <div className="w-full rounded-xl h-130 border-2 border-[#F1F069] bg-[#23213B]" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const testimonials = [
+  {
+    quote:
+      "คอร์สเรียนที่ดีมาก อธิบายง่าย เข้าใจง่าย ครูสอนดีมากครับ แนะนำเลยสำหรับคนที่อยากเริ่มต้นเรียนพูดอังกฤษ",
+    name: "สมชาย ใจดี",
+    role: "นักเรียนคอร์ส english",
+  },
+  {
+    quote:
+      "คอร์สเรียนที่ดีมาก อธิบายง่าย เข้าใจง่าย ครูสอนดีมากครับ แนะนำเลยสำหรับคนที่อยากเริ่มต้นเรียนพูดอังกฤษ",
+    name: "สมชาย ใจดี",
+    role: "นักเรียนคอร์ส english",
+  },
+  {
+    quote:
+      "คอร์สเรียนที่ดีมาก อธิบายง่าย เข้าใจง่าย ครูสอนดีมากครับ แนะนำเลยสำหรับคนที่อยากเริ่มต้นเรียนพูดอังกฤษ",
+    name: "สมชาย ใจดี",
+    role: "นักเรียนคอร์ส english",
+  },
+];
+
+const StarIcon = () => (
+  <svg
+    viewBox="0 0 20 20"
+    className="h-6 w-6 md:h-9 md:w-9 fill-yellow-400"
+    aria-hidden="true"
+  >
+    <path d="M10 1.5 12.6 7l5.4.5-4.1 3.6 1.3 5.3L10 13.7 4.8 16.4l1.3-5.3L2 7.5 7.4 7 10 1.5z" />
+  </svg>
+);
+
+const Avatar = () => (
+  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-500/20 border border-indigo-400/40">
+    <svg
+      viewBox="0 0 24 24"
+      className="h-5 w-5 text-indigo-200"
+      aria-hidden="true"
+    >
+      <path
+        fill="currentColor"
+        d="M12 2a5 5 0 0 0-1 9.9V13H8a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-3v-1.1A5 5 0 0 0 12 2z"
+      />
+    </svg>
+  </div>
+);
+
+const Testimonials = () => {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  const scroll = (direction: "left" | "right") => {
+    if (!scrollRef.current) return;
+
+    const firstCard = scrollRef.current.firstElementChild as HTMLElement | null;
+    const cardWidth = firstCard ? firstCard.offsetWidth + 24 : 320;
+
+    scrollRef.current.scrollBy({
+      left: direction === "left" ? -cardWidth : cardWidth,
+      behavior: "smooth",
+    });
+  };
+
+  return (
+    <section className="w-full py-10 md:py-14">
+      <div className="mx-auto max-w-6xl px-4 md:px-6">
+        <div className="relative">
+          {/* ปุ่มเลื่อน (desktop) */}
+          <button
+            onClick={() => scroll("left")}
+            className="hidden md:flex absolute left-0 top-1/2 z-10 -translate-y-1/2 -translate-x-15 h-10 w-10 items-center justify-center rounded-full bg-black/40 hover:bg-black/60 backdrop-blur text-white"
+          >
+            <img src="/img/icon/Left_Icon.svg" alt="" className="" />
+          </button>
+          <button
+            onClick={() => scroll("right")}
+            className="hidden md:flex absolute right-0 top-1/2 z-10 -translate-y-1/2 translate-x-15 h-10 w-10 items-center justify-center rounded-full bg-black/40 hover:bg-black/60 backdrop-blur text-white"
+          >
+            <img src="/img/icon/Right_Icon.svg" alt="" className="" />
+          </button>
+
+          {/* แถวรีวิวเลื่อนแนวนอน */}
+          <div
+            ref={scrollRef}
+            className="flex gap-4 md:gap-6 overflow-x-auto pb-2"
+          >
+            {testimonials.map((t, idx) => (
+              <article
+                key={idx}
+                className="min-w-[260px] md:min-w-[320px] flex-1 rounded-2xl bg-[#11152f] px-5 py-4 md:px-6 md:py-7 shadow-[0_1px_4px_rgba(0,0,0,0.55)] shrink-0"
+              >
+                <div className="flex mb-4 w-full justify-center gap-1">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <StarIcon key={i} />
+                  ))}
+                </div>
+
+                <p className="mb-5 text-sm leading-relaxed text-slate-100 md:text-[15px]">
+                  “{t.quote}”
+                </p>
+
+                <div className="mt-auto flex items-center gap-3">
+                  <Avatar />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-slate-50">
+                      {t.name}
+                    </span>
+                    <span className="text-xs text-slate-400">{t.role}</span>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+function ReviewsContract() {
+  return (
+    <div className="max-w-screen min-w-full min-h-full flex flex-col pt-20">
+      <h1 className="Head1 text-center text-[#FBB1A9] mb-2">REVIEW รีวิว</h1>
+      <Testimonials />
+      <div className="bg-[#282341] w-full h-85 flex flex-col px-10">
+        <div className="flex-1 flex w-full min-h-[90%]">
+          <div className="flex-[0.8] pt-5 flex flex-col justify-center items-center">
+            <img
+              src="/img/Logo/Learney-Journey_logo-White.svg"
+              alt=""
+              className="w-60"
+            />
+            <div className="px-10">
+              <img
+                src="/img/imgHome/P-picture.svg"
+                alt=""
+                className="w-40 h-40 object-cover rounded-xl mt-5 shadow-lg"
+              />
+            </div>
+          </div>
+          <div className="flex-auto flex flex-col justify-center items-start pl-20 px-10 pt-5">
+            <h1 className="Head1">CONTACT</h1>
+            <ul className="w-full text-2xl">
+              <div className="flex mb-2">
+                <p className="flex-[0.5] max-w-30">Facebook</p>
+                <p className="flex-[0.5] max-w-5 text-center">:</p>
+                <p className="flex-auto">Learny Journey</p>
+              </div>
+              <div className="flex mb-2">
+                <p className="flex-[0.5] max-w-30">Line</p>
+                <p className="flex-[0.5] max-w-5 text-center">:</p>
+                <p className="flex-auto">LineOfficialID</p>
+              </div>
+              <div className="flex mb-2">
+                <p className="flex-[0.5] max-w-30">TikTok</p>
+                <p className="flex-[0.5] max-w-5 text-center">:</p>
+                <p className="flex-auto">Learny Journey TikTok</p>
+              </div>
+              <div className="flex mb-2">
+                <p className="flex-[0.5] max-w-30">Email</p>
+                <p className="flex-[0.5] max-w-5 text-center">:</p>
+                <p className="flex-auto">LearnyJourney@gmail.com</p>
+              </div>
+              <div className="flex mb-2">
+                <p className="flex-[0.5] max-w-30">X</p>
+                <p className="flex-[0.5] max-w-5 text-center">:</p>
+                <p className="flex-auto">X account name</p>
+              </div>
+            </ul>
+          </div>
+          <div className="flex-[0.8] flex pt-5 justify-center items-center">
+            <div className="flex-2 px-5">
+              <ul className="mt-2">
+                <button>
+                  <img
+                    src="/img/icon/Facebooklanding_icon.svg"
+                    alt=""
+                    className=""
+                  />
+                </button>
+                <button>
+                  <img src="/img/icon/LINE_icon.svg" alt="" className="" />
+                </button>
+                <button>
+                  <img src="/img/icon/TikTok_icon.svg" alt="" className="" />
+                </button>
+                <button>
+                  <img src="/img/icon/TwitterX_icon.svg" alt="" className="" />
+                </button>
+              </ul>
+            </div>
+            <div className="flex-auto">
+              <img src="/img/icon/Test.svg" alt="" className="w-50" />
+            </div>
+          </div>
+        </div>
+        <div className="flex-[0.2] w-full">
+          <p className="text-center">
+            © 2025 LEARNY JOURNEY. ALL RIGHTS RESERVED
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function Home() {
   return (
     <div className="max-w-screen w-full min-h-screen bg-cover bg-bottom bg-[url('/img/imgHome/Bg-home.svg')]">
-      <div className=" z-20  max-w-screen min-h-screen  bg-linear-to-b from-[] to-[#070D2D]/89 ">
-        <div className=" z-30 w-full min-h-screen h-full flex flex-col justify-center content-center items-center text-center">
+      <div className="z-20 max-w-screen min-h-screen bg-gradient-to-b from-transparent to-[#070D2D]/89">
+        <div className="z-30 w-full min-h-screen h-full flex flex-col justify-center content-center items-center text-center">
           <h1 className="text-6xl font-semibold gradient-text">
             LEARNEY JOURNEY
           </h1>
-          <p className="my-2 text-xl gradient-text-light mt-6 ">
+          <p className="my-2 text-xl gradient-text-light mt-6">
             ร่วมเดินทางสู่โลกแห่งการเรียนรู้ ด้วยหลักสูตรคุณภาพ
             <br />
             และประสบการณ์การสอนที่เหนือระดับ
@@ -73,16 +363,15 @@ function Home() {
 
 export default function Mainpage() {
   return (
-    <div className="max-w-screen w-full bg-center min-h-screen bg-cover bg-[#070D2D] ">
-      <div className="z-40">
+    <div className="max-w-screen w-full bg-center min-h-screen bg-cover bg-[#070D2D]">
+      <div className="z-30">
         <Home />
       </div>
-      <div className=" z-10 w-full max-w-screen   from-[#070D2D]/60 via-[#7168D7]/60 via-[#DE8391]/60 to-[#070D2D]/60 bg-linear-to-b min-h-full ">
+      <div className="z-10 w-full max-w-screen from-[#070D2D]/60 via-[#7168D7]/60 via-[#DE8391]/60 to-[#070D2D]/60 bg-gradient-to-b min-h-full">
         <Intro />
-        <Space />
-        <Space />
-        <Space />
-        <Space />
+        <Detail />
+        <Coures />
+        <ReviewsContract />
       </div>
     </div>
   );

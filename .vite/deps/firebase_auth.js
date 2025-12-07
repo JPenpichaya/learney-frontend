@@ -29,7 +29,7 @@ import {
   querystringDecode,
   registerVersion,
   updateEmulatorBanner
-} from "./chunk-QUSJ4FMQ.js";
+} from "./chunk-UVH2FPSS.js";
 import "./chunk-5WRI5ZAA.js";
 
 // node_modules/@firebase/auth/dist/esm/index-9ccb475d.js
