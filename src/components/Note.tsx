@@ -42,7 +42,6 @@ interface YouTubeNotesProps {
   videoId?: string;
   videoUrl?: string;
 
-  courseTitle?: string;
   lessons?: LessonOption[];
   currentLessonId?: string;
   onSelectLesson?: (id: string) => void;
@@ -121,7 +120,6 @@ function loadYouTubeAPI() {
 export default function Note({
   videoId,
   videoUrl,
-  courseTitle,
   lessons,
   currentLessonId,
   onSelectLesson,

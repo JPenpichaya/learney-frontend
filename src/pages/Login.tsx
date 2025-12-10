@@ -47,70 +47,39 @@ export default function Login() {
   };
 
   // Generic helper for Google/Facebook sign-in
-  const loginWithProvider = async (
-    provider: typeof google | typeof facebook
-  ) => {
-    try {
-      // 1) Popup login with Firebase
-      const cred = await signInWithPopup(auth, provider);
-      const firebaseUser = cred.user;
+  // const loginWithProvider = async (
+  //   provider: typeof google | typeof facebook
+  // ) => {
+  //   try {
+  //     // 1) Popup login with Firebase
+  //     const cred = await signInWithPopup(auth, provider);
+  //     const firebaseUser = cred.user;
 
-      // 2) Get fresh ID token
-      const token = await getIdToken(firebaseUser, true);
+  //     // 2) Get fresh ID token
+  //     const token = await getIdToken(firebaseUser, true);
 
-      // 3) Tell backend "here is my Firebase token"
-      const res = await fetch(import.meta.env.VITE_API_BASE + "/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+  //     // 3) Tell backend "here is my Firebase token"
+  //     const res = await fetch(import.meta.env.VITE_API_BASE + "/auth/login", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
 
-      if (!res.ok) {
-        console.error("Backend auth failed:", await res.text());
-        throw new Error("Backend auth failed");
-      }
+  //     if (!res.ok) {
+  //       console.error("Backend auth failed:", await res.text());
+  //       throw new Error("Backend auth failed");
+  //     }
 
-      // (optional) you could read user data from backend here:
-      // const data = await res.json();
-      // console.log("Backend user:", data);
-    } catch (err) {
-      console.error(err);
-      alert("Login failed");
-    }
-  };
-
-  const signInGoogle = () => loginWithProvider(google);
-  const signInFacebook = () => loginWithProvider(facebook);
-
-  if (user)
-    return (
-      <div className="min-h-screen grid place-items-center ">
-        <div className="w-full max-w-5xl">
-          <div className="mb-4 text-center">
-            <div>
-              Signed in as <b>{user.displayName || user.email}</b>
-            </div>
-            <div className="mt-2 space-x-2">
-              <button
-                onClick={callBackend}
-                className="border px-3 py-2 rounded"
-              >
-                Call backend
-              </button>
-              <button
-                onClick={() => signOut(auth)}
-                className="border px-3 py-2 rounded"
-              >
-                Sign out
-              </button>
-            </div>
-          </div>
-          <CallPage identity={user.uid} roomName="demo-room" />
-        </div>
-      </div>
-    );
+  //     // (optional) you could read user data from backend here:
+  //     // const data = await res.json();
+  //     // console.log("Backend user:", data);
+  //   } catch (err) {
+  //     console.error(err);
+  //     alert("Login failed");
+  //   }
+  // };
 
   if (user)
     return (

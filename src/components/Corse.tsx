@@ -1,7 +1,7 @@
 // src/components/Corse.tsx
 import { useEffect, useState } from "react";
 import Note from "./Note";
-
+import { useToken } from "../context/TokenContext";
 /* ---------- Types ---------- */
 export type LessonStatus = "pending" | "current" | "done";
 
@@ -136,12 +136,14 @@ async function fetchUserCourse(
 }
 
 /* ---------- COMPONENT ---------- */
-export default function Corse({ courseId, idToken, baseUrl }: CoursePageProps) {
+export default function VideoSection({ courseId }: CoursePageProps) {
   const [course, setCourse] = useState<Course | null>(null);
   const [lessonsState, setLessonsState] = useState<Lesson[]>([]);
   const [currentLessonId, setCurrentLessonId] = useState<string>("");
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string>("");
-  const [userCourseData, setUserCourseData] = useState<any>(null);
+  const { token } = useToken();
+  const idToken = token || "";
+  const baseUrl = "";
 
   /* ---------- Load Lessons + UserCourse + First Video ---------- */
   useEffect(() => {
@@ -149,21 +151,21 @@ export default function Corse({ courseId, idToken, baseUrl }: CoursePageProps) {
 
     async function load() {
       try {
-        // 👇 ตอนนี้ fetchUserCourse ถูก "เรียกจริง" แล้วนะ
+        // 👇 body สำหรับ user-course (ตอนนี้ hard-code userId ไว้ก่อน)
         const userCourseBody: UserCourseApi = {
-          userId: "Yfi1Px8c4MNMsz9MfvWFkVnXmTr2", // TODO: ควรรับมาจาก props ในอนาคต
+          userId: "Yfi1Px8c4MNMsz9MfvWFkVnXmTr2", // TODO: ดึงจาก auth context ในอนาคต
           courseId,
         };
 
-        // ยิง API พร้อมกัน 2 ตัว: lesson + userCourse
+        // ยิง API พร้อมกัน 2 ตัว: lessons + userCourse
         const [lessonList, userCourse] = await Promise.all([
           fetchLessonsByCourse(courseId, idToken, baseUrl),
           fetchUserCourse(userCourseBody, idToken, baseUrl),
         ]);
 
-        if (cancel) return;
+        console.log("User course:", userCourse); // กัน unused + debug ดูใน console
 
-        setUserCourseData(userCourse); // กัน unused warning + ไว้ใช้ต่อในอนาคต
+        if (cancel) return;
 
         const lessons: Lesson[] = lessonList
           .sort((a: LessonApi, b: LessonApi) => a.position - b.position)
@@ -277,7 +279,6 @@ export default function Corse({ courseId, idToken, baseUrl }: CoursePageProps) {
             key={currentLessonId}
             videoId={currentVideoId}
             videoUrl={currentVideoUrl}
-            courseTitle={course.title}
             lessons={lessonsState.map((l) => ({
               id: l.id,
               title: l.title,
