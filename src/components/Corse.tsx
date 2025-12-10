@@ -1,79 +1,58 @@
 // src/components/Corse.tsx
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Note from "./Note";
 
 /* ---------- Types ---------- */
 export type LessonStatus = "pending" | "current" | "done";
 
+interface LessonApi {
+  id: string;
+  courseId: string;
+  title: string;
+  description: string;
+  position: number;
+}
+
 interface Lesson {
-  id: number;
+  id: string;
   title: string;
   status: LessonStatus;
   videoUrl: string;
-  parentId?: number; // ✅ เพิ่มบรรทัดนี้
+  parentId?: string;
 }
 
 interface Section {
-  id: number;
+  id: string;
   title: string;
   status: string;
   lessons: Lesson[];
 }
+
 interface Course {
-  id: number;
+  id: string;
   title: string;
   sections: Section[];
 }
+
 interface CoursePageProps {
-  course?: Course;
+  courseId: string;
+  idToken: string;
+  baseUrl: string;
 }
 
-/* ---------- Mock data ---------- */
-const mockCourse: Course = {
-  id: 1,
-  title: "English",
-  sections: [
-    {
-      id: 1,
-      title: "Basic Tense",
-      status: "",
-      lessons: [
-        {
-          id: 1,
-          title: "Verb",
-          videoUrl: "https://www.youtube.com/watch?v=bMknfKXIFA8",
-          status: "current",
-        },
-        {
-          id: 2,
-          title: "Past Simple",
-          videoUrl: "https://www.youtube.com/watch?v=w7ejDZ8SWv8",
-          status: "pending",
-        },
-        {
-          id: 3,
-          title: "Past Positive (detail 1)",
-          videoUrl: "https://www.youtube.com/watch?v=4UZrsTqkcW4",
-          status: "pending",
-          parentId: 2, // ✅ เป็นย่อยของ Past Simple
-        },
-        {
-          id: 4,
-          title: "Past Positive (detail 2)",
-          videoUrl: "https://www.youtube.com/watch?v=Ke90Tje7VS0",
-          status: "pending",
-          parentId: 2, // ✅ ย่อยของ Past Simple เช่นกัน
-        },
-        {
-          id: 5,
-          title: "Past Simple",
-          videoUrl: "https://youtu.be/KibYIyEOjkE?si=r4WgXzwXADo03_aW",
-          status: "pending",
-        },
-      ],
-    },
-  ],
-};
+interface VideoApi {
+  id: string;
+  lessonId: string;
+  title: string;
+  url: string;
+  duration: number;
+  position: number;
+}
+
+interface UserCourseApi {
+  userId: string;
+  courseId: string;
+}
 
 /* ---------- helper: extract YT id ---------- */
 function extractYouTubeId(urlOrId: string): string {
@@ -91,36 +70,164 @@ function extractYouTubeId(urlOrId: string): string {
   return urlOrId;
 }
 
-export default function Corse({ course = mockCourse }: CoursePageProps) {
-  // flatten เป็น array เดียว
-  const initialFlatLessons = useMemo<Lesson[]>(
-    () =>
-      course.sections.flatMap((s) =>
-        s.lessons.map((l, idx) => ({
-          ...l,
-          // ถ้าไม่มี status จาก backend ให้เซ็ตเอง
-          status: l.status || (idx === 0 ? "current" : "pending"),
-        }))
-      ),
-    [course]
-  );
+/* ---------- API: Lessons ---------- */
+async function fetchLessonsByCourse(
+  courseId: string,
+  idToken: string,
+  baseUrl: string
+): Promise<LessonApi[]> {
+  const res = await fetch(`${baseUrl}/api/course-lessons/get-by-course`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({ uuid: courseId }),
+  });
 
-  const [lessonsState, setLessonsState] =
-    useState<Lesson[]>(initialFlatLessons);
-  const [currentLessonId, setCurrentLessonId] = useState<number>(
-    initialFlatLessons[0]?.id ?? 0
-  );
+  if (!res.ok) {
+    throw new Error("Failed to fetch lessons");
+  }
+  return await res.json();
+}
 
-  const currentLesson = useMemo(
-    () => lessonsState.find((l) => l.id === currentLessonId) || lessonsState[0],
-    [lessonsState, currentLessonId]
-  );
+/* ---------- API: Videos ---------- */
+async function fetchVideosByLesson(
+  lessonId: string,
+  idToken: string,
+  baseUrl: string
+): Promise<VideoApi[]> {
+  const res = await fetch(`${baseUrl}/api/course-video/get-by-lesson`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({ uuid: lessonId }),
+  });
 
+  if (!res.ok) {
+    throw new Error("Failed to fetch videos");
+  }
+
+  return await res.json();
+}
+
+/* ---------- API: User Course ---------- */
+async function fetchUserCourse(
+  payload: UserCourseApi,
+  idToken: string,
+  baseUrl: string
+) {
+  const res = await fetch(`${baseUrl}/api/user-course/get`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch user course");
+  }
+
+  return await res.json();
+}
+
+/* ---------- COMPONENT ---------- */
+export default function Corse({ courseId, idToken, baseUrl }: CoursePageProps) {
+  const [course, setCourse] = useState<Course | null>(null);
+  const [lessonsState, setLessonsState] = useState<Lesson[]>([]);
+  const [currentLessonId, setCurrentLessonId] = useState<string>("");
+  const [currentVideoUrl, setCurrentVideoUrl] = useState<string>("");
+  const [userCourseData, setUserCourseData] = useState<any>(null);
+
+  /* ---------- Load Lessons + UserCourse + First Video ---------- */
+  useEffect(() => {
+    let cancel = false;
+
+    async function load() {
+      try {
+        // 👇 ตอนนี้ fetchUserCourse ถูก "เรียกจริง" แล้วนะ
+        const userCourseBody: UserCourseApi = {
+          userId: "Yfi1Px8c4MNMsz9MfvWFkVnXmTr2", // TODO: ควรรับมาจาก props ในอนาคต
+          courseId,
+        };
+
+        // ยิง API พร้อมกัน 2 ตัว: lesson + userCourse
+        const [lessonList, userCourse] = await Promise.all([
+          fetchLessonsByCourse(courseId, idToken, baseUrl),
+          fetchUserCourse(userCourseBody, idToken, baseUrl),
+        ]);
+
+        if (cancel) return;
+
+        setUserCourseData(userCourse); // กัน unused warning + ไว้ใช้ต่อในอนาคต
+
+        const lessons: Lesson[] = lessonList
+          .sort((a: LessonApi, b: LessonApi) => a.position - b.position)
+          .map((l: LessonApi, index: number) => ({
+            id: l.id,
+            title: l.title,
+            status: index === 0 ? "current" : "pending",
+            videoUrl: "",
+          }));
+
+        const section: Section = {
+          id: courseId,
+          title: "All Lessons",
+          status: "",
+          lessons,
+        };
+
+        setCourse({
+          id: courseId,
+          title: "My Course",
+          sections: [section],
+        });
+
+        setLessonsState(lessons);
+        const firstLessonId = lessons[0]?.id ?? "";
+        setCurrentLessonId(firstLessonId);
+
+        // โหลดวิดีโออันแรก
+        if (firstLessonId) {
+          const videos = await fetchVideosByLesson(
+            firstLessonId,
+            idToken,
+            baseUrl
+          );
+          if (!cancel && videos.length > 0) {
+            setCurrentVideoUrl(videos[0].url);
+          }
+        }
+      } catch (err) {
+        console.error("ERROR loading course:", err);
+      }
+    }
+
+    load();
+    return () => {
+      cancel = true;
+    };
+  }, [courseId, idToken, baseUrl]);
+
+  /* ---------- Loading UI ---------- */
+  if (!course || lessonsState.length === 0) {
+    return (
+      <div className="min-h-screen flex justify-center items-center text-white bg-[#070D2D]">
+        Loading course...
+      </div>
+    );
+  }
+
+  /* ---------- Current / Next lesson ---------- */
   const currentIndex = lessonsState.findIndex((l) => l.id === currentLessonId);
   const isLastLesson =
     currentIndex >= 0 && currentIndex === lessonsState.length - 1;
 
-  const currentVideoId = extractYouTubeId(currentLesson.videoUrl);
+  const currentVideoId = extractYouTubeId(currentVideoUrl);
 
   const setStatusByIndex = (targetIndex: number) => {
     setLessonsState((prev) =>
@@ -132,24 +239,36 @@ export default function Corse({ course = mockCourse }: CoursePageProps) {
     );
   };
 
-  const handleSelectLesson = (id: number | string) => {
-    const numericId = typeof id === "string" ? Number(id) : id;
-    const idx = lessonsState.findIndex((l) => l.id === numericId);
+  const handleSelectLesson = async (id: string | number) => {
+    const realId = String(id);
+
+    const idx = lessonsState.findIndex((l) => l.id === realId);
     if (idx === -1) return;
 
     setStatusByIndex(idx);
-    setCurrentLessonId(numericId);
+    setCurrentLessonId(realId);
+
+    // โหลดวิดีโอของ lesson ที่เลือก
+    try {
+      const videos = await fetchVideosByLesson(realId, idToken, baseUrl);
+      if (videos.length > 0) {
+        setCurrentVideoUrl(videos[0].url);
+      } else {
+        setCurrentVideoUrl("");
+      }
+    } catch (e) {
+      console.error("ERROR fetch videos by lesson:", e);
+    }
   };
 
   const goToNextLesson = () => {
-    if (currentIndex === -1) return;
+    if (currentIndex === -1 || isLastLesson) return;
     const nextIndex = currentIndex + 1;
-    if (nextIndex >= lessonsState.length) return;
-
-    setStatusByIndex(nextIndex);
-    setCurrentLessonId(lessonsState[nextIndex].id);
+    const nextId = lessonsState[nextIndex].id;
+    handleSelectLesson(nextId);
   };
 
+  /* ---------- RENDER ---------- */
   return (
     <div className="min-h-screen w-full bg-[#070D2D] text-white flex flex-col">
       <div className="flex-1 flex items-center justify-center px-4 mt-10">
@@ -157,7 +276,7 @@ export default function Corse({ course = mockCourse }: CoursePageProps) {
           <Note
             key={currentLessonId}
             videoId={currentVideoId}
-            videoUrl={currentLesson.videoUrl}
+            videoUrl={currentVideoUrl}
             courseTitle={course.title}
             lessons={lessonsState.map((l) => ({
               id: l.id,

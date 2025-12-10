@@ -25,11 +25,10 @@ type SaveAfterMode = "pause" | "continue" | "nochange";
 type Mode = "course" | "note" | "all";
 
 type LessonOption = {
-  id: number | string;
+  id: string;
   title: string;
   status?: LessonStatus;
-  /** ถ้ามี parentId แปลว่าเป็นหัวข้อย่อยของ lesson นั้น */
-  parentId?: number | string;
+  parentId?: string;
 };
 
 type DisplayLesson = {
@@ -45,8 +44,8 @@ interface YouTubeNotesProps {
 
   courseTitle?: string;
   lessons?: LessonOption[];
-  currentLessonId?: number | string;
-  onSelectLesson?: (id: number | string) => void;
+  currentLessonId?: string;
+  onSelectLesson?: (id: string) => void;
 
   onNextLesson?: () => void;
   isLastLesson?: boolean;
