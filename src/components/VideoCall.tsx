@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { use, useEffect, useMemo, useState } from "react";
 import {
   LiveKitRoom,
   VideoConference,
@@ -62,6 +62,10 @@ export const CallPage: React.FC<CallPageProps> = ({
     return () => unsub();
   }, []);
 
+  useEffect(() => {
+    setTokenData(null); // reset token when room changes
+  }, []);
+
   // fetch LiveKit token when auth & room ready
   useEffect(() => {
     if (!idToken || !identity || !urlRoom) return;
@@ -93,6 +97,37 @@ export const CallPage: React.FC<CallPageProps> = ({
       }
     })();
   }, [idToken, identity, urlRoom]);
+
+  //TODO TEST
+  useEffect(() => {
+    async () => {
+      try {
+        const res = await fetch(
+          "https://learney-journey-24285490035.asia-southeast1.run.app/token",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${idToken}`,
+            },
+            body: JSON.stringify({ room: urlRoom, identity }),
+          }
+        );
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(
+            `Failed to fetch token (${res.status}): ${text || "no body"}`
+          );
+        }
+        const data: TokenResponse = await res.json();
+        // ③ prefer wss: (your backend can also return wss://)
+        const serverUrl = data.url.replace(/^http(s)?:\/\//, "wss://");
+        setTokenData({ url: serverUrl, token: data.token });
+      } catch (e: any) {
+        setError(e.message || "Token fetch failed");
+      }
+    }
+  }, []);
 
   if (error && !tokenData)
     return <p className="text-red-600 p-4">Error: {error}</p>;
