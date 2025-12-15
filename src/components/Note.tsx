@@ -1,4 +1,5 @@
 // src/components/Note.tsx
+// @ts-ignore
 import React, { useEffect, useMemo, useRef, useState, useId } from "react";
 
 /* ---------- Global typings for YT ---------- */
@@ -145,9 +146,9 @@ export default function Note({
       const parsed = JSON.parse(raw);
       return Array.isArray(parsed)
         ? parsed.map((n) => ({
-            ...n,
-            tags: Array.isArray(n.tags) ? n.tags : [],
-          }))
+          ...n,
+          tags: Array.isArray(n.tags) ? n.tags : [],
+        }))
         : [];
     } catch {
       return [];
@@ -190,13 +191,13 @@ export default function Note({
   useEffect(() => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(notes));
-    } catch {}
+    } catch { }
   }, [notes, storageKey]);
 
   useEffect(() => {
     try {
       localStorage.setItem(FOCUS_STORAGE, String(pauseOnFocus));
-    } catch {}
+    } catch { }
   }, [pauseOnFocus, FOCUS_STORAGE]);
 
   /* init YT player */
@@ -233,7 +234,7 @@ export default function Note({
       try {
         playerRef.current?.destroy();
         playerRef.current = null;
-      } catch {}
+      } catch { }
       setReady(false);
       const c = document.getElementById(containerId);
       if (c) c.innerHTML = "";
@@ -270,7 +271,7 @@ export default function Note({
     if (pauseOnFocus) {
       try {
         playerRef.current?.pauseVideo();
-      } catch {}
+      } catch { }
     }
   };
 
@@ -284,7 +285,7 @@ export default function Note({
         setForm((f) => ({ ...f, start: sToStamp(t) }));
       }
       setAutoStamped(true);
-    } catch {}
+    } catch { }
   };
 
   const saveNote = () => {
@@ -356,7 +357,7 @@ export default function Note({
       Math.min(100, Math.max(0, (completed / lessons.length) * 100))
     );
   }
-
+  // @ts-ignore
   const headerLabel = courseTitle
     ? `${courseTitle} ${progressPercent}%`
     : "PROGRESS";
@@ -406,31 +407,28 @@ export default function Note({
             <div className="flex justify-end gap-2  mb-4">
               <button
                 onClick={() => setMode("course")}
-                className={`px-4 py-1 rounded-full text-sm  font-medium ${
-                  mode === "course"
-                    ? "bg-[#FFEE91] text-[#FF7C92]"
-                    : "bg-[#DD81B8] text-white/90"
-                }`}
+                className={`px-4 py-1 rounded-full text-sm  font-medium ${mode === "course"
+                  ? "bg-[#FFEE91] text-[#FF7C92]"
+                  : "bg-[#DD81B8] text-white/90"
+                  }`}
               >
                 subject
               </button>
               <button
                 onClick={() => setMode("note")}
-                className={`px-4 py-1 rounded-full text-sm font-medium ${
-                  mode === "note"
-                    ? "bg-[#FFEE91] text-[#FF7C92]"
-                    : "bg-[#DD81B8] text-white/90"
-                }`}
+                className={`px-4 py-1 rounded-full text-sm font-medium ${mode === "note"
+                  ? "bg-[#FFEE91] text-[#FF7C92]"
+                  : "bg-[#DD81B8] text-white/90"
+                  }`}
               >
                 Note
               </button>
               <button
                 onClick={() => setMode("all")}
-                className={`px-4 py-1 rounded-full text-sm font-medium ${
-                  mode === "all"
-                    ? "bg-[#FFEE91] text-[#464B9F]"
-                    : "bg-[#DD81B8] text-white/90"
-                }`}
+                className={`px-4 py-1 rounded-full text-sm font-medium ${mode === "all"
+                  ? "bg-[#FFEE91] text-[#464B9F]"
+                  : "bg-[#DD81B8] text-white/90"
+                  }`}
               >
                 All Note
               </button>
@@ -480,8 +478,8 @@ export default function Note({
                           isCurrent
                             ? "bg-[#3B356C] text-white font-semibold"
                             : isDone
-                            ? " text-white/90"
-                            : "bg-[#221F3F] text-white/80 hover:bg-[#2E2A55]",
+                              ? " text-white/90"
+                              : "bg-[#221F3F] text-white/80 hover:bg-[#2E2A55]",
                         ].join(" ")}
                       >
                         <span

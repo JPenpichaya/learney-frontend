@@ -7,8 +7,8 @@ import {
     getIdToken,
 } from "firebase/auth";
 import type { User } from "firebase/auth";
-import { CallPage } from "../components/VideoCall";
 import { useToken } from "../context/TokenContext";
+import CoursesPage from "./CoursePage";
 
 export default function Login() {
     const [user, setUser] = useState<User | null>(null);
@@ -38,7 +38,7 @@ export default function Login() {
         const token = await getIdToken(auth.currentUser, true);
         console.log("ID token prefix:", token.slice(0, 20));
 
-        const res = await fetch(import.meta.env.VITE_API_BASE + "/me", {
+        const res = await fetch(import.meta.env.VITE_API_BASE + "/api/me", {
             headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -59,7 +59,7 @@ export default function Login() {
             const token = await getIdToken(firebaseUser, true);
 
             // 3) Tell backend "here is my Firebase token"
-            const res = await fetch(import.meta.env.VITE_API_BASE + "/auth/login", {
+            const res = await fetch(import.meta.env.VITE_API_BASE + "/api/auth/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -104,7 +104,7 @@ export default function Login() {
                             </button>
                         </div>
                     </div>
-                    <CallPage identity={user.uid} roomName="demo-room" />
+                    <CoursesPage />
                 </div>
             </div>
         );

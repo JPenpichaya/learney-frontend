@@ -1,11 +1,13 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 
 // Pages
-import Mainpage from "./pages/Home.tsx";
+// import Mainpage from "./pages/Home.tsx";
 import Login from "./pages/Login.tsx";
-import { CallPage } from "./components/VideoCall";
-import VideoSection from "./components//Corse.tsx";
+// import { CallPage } from "./components/VideoCall";
+// import VideoSection from "./components//Corse.tsx";
 // ✅ แก้ชื่อให้ถูก (ไม่ใช่ Corse.tsx)
+import CoursePage from "./pages/CoursePage.tsx";
+import LiveRoomPage from "./pages/LiveRoomPage.tsx";
 
 // Layout
 import Menubar from "./components/Navber.tsx";
@@ -24,17 +26,14 @@ export default function App() {
       <main className="ibm-plex-sans-thai-light">
         <Routes>
           {/* หน้า Home */}
-          <Route path="/" element={<Mainpage />} />
+          <Route path="/" element={<Login />} />
 
           {/* หน้า Login */}
           <Route path="/login" element={<Login />} />
 
-          {/* คอร์สเรียน */}
-          <Route path="/call" element={<CallPage identity="anonymous" />} />
-          <Route path="/reviews" element={<VideoSection />} />
-
-          {/* 404 */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="/courses" element={<CoursePage />} />
+          <Route path="/live" element={<LiveRoomPage />} />
+          <Route path="*" element={<Navigate to="/courses" />} />
         </Routes>
       </main>
     </div>
