@@ -3,12 +3,11 @@ import { auth, google, facebook } from "../lib/firebase";
 import {
     signInWithPopup,
     onAuthStateChanged,
-    signOut,
     getIdToken,
 } from "firebase/auth";
 import type { User } from "firebase/auth";
 import { useToken } from "../context/TokenContext";
-import CoursesPage from "./CoursePage";
+import { Navigate } from "react-router-dom";
 
 export default function Login() {
     const [user, setUser] = useState<User | null>(null);
@@ -29,22 +28,22 @@ export default function Login() {
     }, [setToken]);
 
     // For testing /me on backend
-    const callBackend = async () => {
-        if (!auth.currentUser) {
-            alert("Not logged in");
-            return;
-        }
+    // const callBackend = async () => {
+    //     if (!auth.currentUser) {
+    //         alert("Not logged in");
+    //         return;
+    //     }
 
-        const token = await getIdToken(auth.currentUser, true);
-        console.log("ID token prefix:", token.slice(0, 20));
+    //     const token = await getIdToken(auth.currentUser, true);
+    //     console.log("ID token prefix:", token.slice(0, 20));
 
-        const res = await fetch(import.meta.env.VITE_API_BASE + "/api/me", {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+    //     const res = await fetch(import.meta.env.VITE_API_BASE + "/api/me", {
+    //         headers: { Authorization: `Bearer ${token}` },
+    //     });
 
-        const text = await res.text();
-        alert(text);
-    };
+    //     const text = await res.text();
+    //     alert(text);
+    // };
 
     // Generic helper for Google/Facebook sign-in
     const loginWithProvider = async (
@@ -82,32 +81,9 @@ export default function Login() {
     };
 
     if (user)
-        return (
-            <div className="min-h-screen grid place-items-center ">
-                <div className="w-full max-w-5xl">
-                    <div className="mb-4 text-center">
-                        <div>
-                            Signed in as <b>{user.displayName || user.email}</b>
-                        </div>
-                        <div className="mt-2 space-x-2">
-                            <button
-                                onClick={callBackend}
-                                className="border px-3 py-2 rounded"
-                            >
-                                Call backend
-                            </button>
-                            <button
-                                onClick={() => signOut(auth)}
-                                className="border px-3 py-2 rounded"
-                            >
-                                Sign out
-                            </button>
-                        </div>
-                    </div>
-                    <CoursesPage />
-                </div>
-            </div>
-        );
+        if (user) {
+            return <Navigate to="/courses" replace />;
+        }
     return (
         <div
             className="min-h-screen text-black min-w-screen grid place-items-center bg-[url('/img/imgLogin/BGLogin.svg')] bg-cover"

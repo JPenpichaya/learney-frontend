@@ -41,7 +41,12 @@ const server = http.createServer((req, res) => {
                 res.end('Server error');
                 return;
             }
-            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.writeHead(200, {
+                "Content-Type": "text/html",
+                "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0"
+            });;
             res.end(data);
         });
     });
@@ -55,3 +60,4 @@ server.on('error', (err) => {
     console.error('Server error:', err);
     process.exit(1);
 });
+

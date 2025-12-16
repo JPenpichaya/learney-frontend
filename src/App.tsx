@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 // Pages
 // import Mainpage from "./pages/Home.tsx";
 import Login from "./pages/Login.tsx";
-// import { CallPage } from "./components/VideoCall";
+import { CallPage } from "./components/VideoCall";
 // import VideoSection from "./components//Corse.tsx";
 // ✅ แก้ชื่อให้ถูก (ไม่ใช่ Corse.tsx)
 import CoursePage from "./pages/CoursePage.tsx";
@@ -15,6 +15,13 @@ import Menubar from "./components/Navber.tsx";
 // Styles
 import "./index.css";
 import "./App.css";
+import { RequireAuth } from "./components/RequireAuth.tsx";
+import { auth } from "./lib/firebase";
+// @ts-ignore
+function CallRoute() {
+  const identity = auth.currentUser?.uid ?? "anonymous";
+  return <CallPage identity={identity} />;
+}
 
 export default function App() {
   return (
@@ -31,9 +38,18 @@ export default function App() {
           {/* หน้า Login */}
           <Route path="/login" element={<Login />} />
 
-          <Route path="/courses" element={<CoursePage />} />
+          <Route
+            path="/courses"
+            element={
+              <RequireAuth>
+                <CoursePage />
+              </RequireAuth>
+            }
+          />
+
+          <Route path="/call" element={<CallPage identity="anonymous" />} />
           <Route path="/live" element={<LiveRoomPage />} />
-          <Route path="*" element={<Navigate to="/courses" />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </main>
     </div>
