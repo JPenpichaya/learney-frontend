@@ -1,73 +1,167 @@
-# React + TypeScript + Vite
+# Learney Journey
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A **production-ready online course marketplace and live learning platform** built to demonstrate real-world backend engineering skills, including payments, authentication, cloud deployment, and system reliability.
 
-Currently, two official plugins are available:
+This project focuses on **backend-first design** while supporting a React-based frontend and live video learning workflows.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## 🔍 Project Overview
+Learney Journey allows students to browse courses, purchase access, enroll securely, and join live learning sessions. The system is designed to mirror real production concerns such as payment safety, access control, and cloud deployment.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+**Key goals of this project:**
+- Build reliable backend services, not just CRUD APIs
+- Handle real payment workflows safely
+- Design systems that are deployable, observable, and maintainable
+- Support frontend consumption via clean REST APIs
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🧱 Architecture Overview
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+**High-level architecture:**
+- **Frontend:** React (consumes REST APIs)
+- **Backend:** Java + Spring Boot (core business logic)
+- **Database:** PostgreSQL
+- **Payments:** Stripe Checkout + Webhooks
+- **Authentication:** OAuth (Google & Facebook)
+- **Cloud:** Google Cloud Platform (Cloud Run)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+**Flow:**
+1. User authenticates via OAuth
+2. Frontend requests backend APIs
+3. Stripe Checkout handles payment
+4. Stripe webhook confirms payment
+5. Backend creates enrollment and grants access
+6. User can join live learning sessions
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+---
+
+## ✨ Key Features
+
+### 🔐 Authentication & Authorization
+- OAuth login with **Google** and **Facebook**
+- Secure session handling
+- Role-based access control:
+  - Student
+  - Instructor
+  - Admin
+
+---
+
+### 💳 Payments & Enrollment
+- Stripe Checkout for secure payments
+- Webhook signature verification
+- Idempotent webhook handling to prevent duplicate enrollment
+- Automatic enrollment creation after successful payment
+
+---
+
+### 🎓 Course & Learning Management
+- Course listing and detail pages
+- Enrollment-based access control
+- Progress and enrollment tracking
+- Live session access restricted to enrolled users
+
+---
+
+### 📡 Live Learning Integration
+- Live video sessions integrated via third-party service
+- Access control enforced by backend enrollment checks
+- Designed for real-time learning use cases
+
+---
+
+## ☁️ Cloud & Operations
+
+This project is deployed and operated in a **production-like environment**.
+
+- Deployed on **Google Cloud Run**
+- Environment separation:
+  - Development
+  - Staging
+  - Production
+- Secrets managed via environment variables
+- Public APIs exposed with health checks
+
+**Health Endpoint:**
+```http
+GET /health
+```
+Returns service status and readiness information.
+
+---
+
+## 🔁 Stripe Webhook Safety
+
+To ensure reliability:
+- Stripe webhook signatures are verified
+- Each event ID is stored and checked
+- Duplicate events are ignored (idempotency)
+
+This prevents:
+- Duplicate enrollments
+- Payment race conditions
+- Retry-related data corruption
+
+---
+
+## 🧪 Testing Strategy
+- Unit tests for core business services
+- Integration testing for payment and enrollment flows
+- Manual end-to-end testing using Stripe test mode
+
+---
+
+## 🚀 Getting Started (Local Development)
+
+### Prerequisites
+- Java 17+
+- PostgreSQL
+- Stripe test account
+
+### Setup
+1. Clone the repository
+2. Configure environment variables
+3. Run the Spring Boot application
+
+```bash
+./mvnw spring-boot:run
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 📌 Environment Variables (Example)
+```env
+DATABASE_URL=...
+STRIPE_SECRET_KEY=...
+STRIPE_WEBHOOK_SECRET=...
+GOOGLE_CLIENT_ID=...
+FACEBOOK_CLIENT_ID=...
 ```
+
+---
+
+## 🎯 Why This Project Matters
+
+This project demonstrates:
+- Real-world backend engineering skills
+- Safe payment processing
+- Cloud deployment and operability
+- System thinking beyond basic CRUD
+- Collaboration-ready API design for frontend teams
+
+It is built to reflect how production systems are designed, deployed, and maintained in professional environments.
+
+---
+
+## 👤 Author
+**Jay (Penpichaya Suttimark)**  
+Backend Engineer — Java / Spring Boot  
+Cloud, Payments, and API Design
+
+---
+
+## 📄 License
+This project is for educational and portfolio purposes.
+
