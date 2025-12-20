@@ -1,10 +1,8 @@
 // src/pages/CoursesPage.tsx
 import { useEffect, useMemo, useState } from "react";
-import { Swiper, SwiperSlide } from "swiper/react";
-import "swiper/css";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../lib/firebase";
-import { getIdToken } from "firebase/auth";
+import { getIdToken, onAuthStateChanged } from "firebase/auth";
 import type { CoursePageUser, CoursePageResponse } from "../types/course";
 
 const API_BASE = import.meta.env.VITE_API_BASE;
@@ -28,11 +26,34 @@ export default function CoursesPage() {
     const [classType, setClassType] = useState<ClassType>("all");
     const [badgeType, setBadgeType] = useState<BadgeType[]>([]);
 
-    const owned = useMemo(() => new Set(ent.map(e => e.courseId)), [ent]);
+    // ===== Pagination state =====
+    const PAGE_SIZE = 6; // ปรับไซส์สไลด์จ้าา
+    const [page, setPage] = useState(0);
+
+    const owned = useMemo(() => new Set(ent.map((e) => e.courseId)), [ent]);
     const isOwned = (courseId: string) => owned.has(courseId);
 
+    const totalPages = useMemo(() => {
+        const n = courses?.content?.length ?? 0;
+        return Math.max(1, Math.ceil(n / PAGE_SIZE));
+    }, [courses, PAGE_SIZE]);
+
+    const pageCourses = useMemo(() => {
+        const list = courses?.content ?? [];
+        const start = page * PAGE_SIZE;
+        return list.slice(start, start + PAGE_SIZE);
+    }, [courses, page, PAGE_SIZE]);
+
+    // กัน page เกินเมื่อ data เปลี่ยน
+    useEffect(() => {
+        setPage(0);
+    }, [courses]);
+
     async function fetchWithAuth(url: string, body?: any) {
-        const token = await getIdToken(auth.currentUser!, false);
+        const user = auth.currentUser;
+        if (!user) throw new Error("Not signed in yet");
+
+        const token = await getIdToken(user, false);
         const res = await fetch(url, {
             method: "POST",
             headers: {
@@ -41,6 +62,7 @@ export default function CoursesPage() {
             },
             body: body ? JSON.stringify(body) : undefined,
         });
+
         if (!res.ok) throw new Error(await res.text());
         return res.json();
     }
@@ -81,6 +103,14 @@ export default function CoursesPage() {
     async function startCheckout(courseId: string, priceId: string) {
         if (busy) return;
         setBusy(courseId);
+
+        if (USE_MOCK) {
+            setTimeout(() => {
+                alert("Mock checkout success 🎉");
+                setBusy(null);
+            }, 600);
+            return;
+        }
 
         try {
             const { url } = await fetchWithAuth(
