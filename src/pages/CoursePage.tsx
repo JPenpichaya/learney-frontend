@@ -9,11 +9,24 @@ import type { CoursePageUser, CoursePageResponse } from "../types/course";
 
 const API_BASE = import.meta.env.VITE_API_BASE;
 
+type ClassType = "all" | "live" | "video";
+type BadgeType = "BEST_SELLER" | "TRENDING" | "NEW";
+
 export default function CoursesPage() {
     const nav = useNavigate();
+
     const [courses, setCourses] = useState<CoursePageUser | null>(null);
     const [ent, setEnt] = useState<CoursePageResponse[]>([]);
     const [busy, setBusy] = useState<string | null>(null);
+
+    // 🔹 pagination
+    const [pageNumber, setPageNumber] = useState(0);
+    const [pageSize] = useState(6);
+
+    // 🔹 filters
+    const [searchText, setSearchText] = useState("");
+    const [classType, setClassType] = useState<ClassType>("all");
+    const [badgeType, setBadgeType] = useState<BadgeType[]>([]);
 
     const owned = useMemo(() => new Set(ent.map(e => e.courseId)), [ent]);
     const isOwned = (courseId: string) => owned.has(courseId);
@@ -32,18 +45,36 @@ export default function CoursesPage() {
         return res.json();
     }
 
+    // 🔹 load courses
+    async function loadCourses() {
+        const body = {
+            pageNumber,
+            pageSize,
+            sortBy: "createdAt",
+            direction: "ASC",
+            condition: {
+                searchText: searchText || undefined,
+                classType,
+                badgeType: badgeType.length ? badgeType : undefined,
+            },
+        };
+
+        const c = await fetchWithAuth(`${API_BASE}/api/course`, body);
+        setCourses(c);
+    }
+
+    // 🔹 initial load + filters reload
+    useEffect(() => {
+        loadCourses();
+    }, [pageNumber, classType, badgeType, searchText]);
+
+    // 🔹 load enrollment once
     useEffect(() => {
         (async () => {
-            const c = await fetchWithAuth(`${API_BASE}/api/course`,
-                {
-                    "pageNumber": 0,
-                    "pageSize": 20
-                }
+            const e = await fetchWithAuth(
+                `${API_BASE}/api/enrollment/by-user-id`
             );
-            const e = await fetchWithAuth(`${API_BASE}/api/enrollment/by-user-id`);
-            setCourses(c);
             setEnt(e);
-            console.log("Fetched courses and enrollments", c, e);
         })();
     }, []);
 
@@ -57,7 +88,6 @@ export default function CoursesPage() {
                 {
                     courseId,
                     items: [{ qty: 1, priceId }],
-                    // (optional) ให้ backend ใช้เป็น success/cancel
                     successUrl: `${window.location.origin}/courses?success=1`,
                     cancelUrl: `${window.location.origin}/courses?canceled=1`,
                 }
@@ -75,7 +105,7 @@ export default function CoursesPage() {
     function enterLive(roomName: string) {
         nav(`/call?room=${encodeURIComponent(roomName)}`);
     }
-    // Live course: ถ้า owned เข้าห้องได้เลย ไม่งั้นไปจ่าย
+
     function handleLiveAction(courseId: string, priceId: string | null) {
         if (isOwned(courseId)) {
             enterLive(courseId);
@@ -88,58 +118,132 @@ export default function CoursesPage() {
         startCheckout(courseId, priceId);
     }
 
-
     return (
         <div className="min-h-screen bg-[#FDF5DE] p-8">
-            <h1 className="text-3xl font-extrabold mb-6">LearneyJourney Courses</h1>
+            <h1 className="text-3xl font-extrabold mb-6">
+                LearneyJourney Courses
+            </h1>
 
-            <Swiper slidesPerView={1.1} spaceBetween={16} breakpoints={{
-                640: { slidesPerView: 2.1 },
-                1024: { slidesPerView: 3.1 },
-            }}>
-                {courses?.content.map((c) => {
-                    console.log(c);
+            {/* 🔍 Filters */}
+            <div className="flex gap-3 mb-6 flex-wrap">
+                <input
+                    className="px-4 py-2 rounded-xl border"
+                    placeholder="Search..."
+                    value={searchText}
+                    onChange={(e) => {
+                        setPageNumber(0);
+                        setSearchText(e.target.value);
+                    }}
+                />
 
-                    return (
-                        <SwiperSlide key={c.id}>
-                            <div className="bg-white rounded-3xl p-5 border shadow-sm flex flex-col h-full text-black">
-                                <h2 className="font-extrabold text-lg">{c.title}</h2>
-                                <p className="text-sm opacity-80 mt-1">{c.description}</p>
+                <select
+                    className="px-4 py-2 rounded-xl border"
+                    value={classType}
+                    onChange={(e) => {
+                        setPageNumber(0);
+                        setClassType(e.target.value as ClassType);
+                    }}
+                >
+                    <option value="all">All</option>
+                    <option value="live">Live</option>
+                    <option value="video">Video</option>
+                </select>
 
-                                <div className="mt-auto flex justify-between items-center pt-4">
-                                    <span className="font-bold">{c.priceThb} THB</span>
+                {(["BEST_SELLER", "TRENDING", "NEW"] as BadgeType[]).map(b => (
+                    <button
+                        key={b}
+                        onClick={() => {
+                            setPageNumber(0);
+                            setBadgeType(prev =>
+                                prev.includes(b)
+                                    ? prev.filter(x => x !== b)
+                                    : [...prev, b]
+                            );
+                        }}
+                        className={`px-3 py-2 rounded-xl border ${badgeType.includes(b)
+                            ? "bg-black text-white"
+                            : "bg-white"
+                            }`}
+                    >
+                        {b}
+                    </button>
+                ))}
+            </div>
 
-                                    {c.isLive ? (
-                                        <button
-                                            onClick={() => handleLiveAction(c.id, c.priceId)}
-                                            disabled={busy === c.id}
-                                            className="btn-live"
-                                        >
-                                            {busy === c.id
-                                                ? "Redirecting…"
-                                                : isOwned(c.id)
-                                                    ? "Enter Live"
-                                                    : "Pay to Join"}
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={() => {
-                                                if (!c.priceId) return alert("Missing priceId");
-                                                startCheckout(c.id, c.priceId);
-                                            }}
-                                            disabled={busy === c.id}
-                                            className="btn-primary"
-                                        >
-                                            {busy === c.id ? "Redirecting…" : "Buy"}
-                                        </button>
-                                    )}
+            {/* 🧩 Course slider */}
+            <Swiper
+                key={`${pageNumber}-${classType}-${badgeType.join(",")}-${searchText}`}
+                slidesPerView={1.1}
+                spaceBetween={16}
+                breakpoints={{
+                    640: { slidesPerView: 2.1 },
+                    1024: { slidesPerView: 3.1 },
+                }}
+            >
+                {courses?.content.map((c) => (
+                    <SwiperSlide key={c.id}>
+                        <div className="bg-white rounded-3xl p-5 border shadow-sm flex flex-col h-full text-black">
+                            <h2 className="font-extrabold text-lg">{c.title}</h2>
+                            <p className="text-sm opacity-80 mt-1">
+                                {c.description}
+                            </p>
 
-                                </div>
+                            <div className="mt-auto flex justify-between items-center pt-4">
+                                <span className="font-bold">{c.priceThb} THB</span>
+
+                                {c.isLive ? (
+                                    <button
+                                        onClick={() => handleLiveAction(c.id, c.priceId)}
+                                        disabled={busy === c.id}
+                                        className="btn-live"
+                                    >
+                                        {busy === c.id
+                                            ? "Redirecting…"
+                                            : isOwned(c.id)
+                                                ? "Enter Live"
+                                                : "Pay to Join"}
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => {
+                                            if (!c.priceId) return alert("Missing priceId");
+                                            startCheckout(c.id, c.priceId);
+                                        }}
+                                        disabled={busy === c.id}
+                                        className="btn-primary"
+                                    >
+                                        {busy === c.id ? "Redirecting…" : "Buy"}
+                                    </button>
+                                )}
                             </div>
-                        </SwiperSlide>
-                    );
-                })}
+                        </div>
+                    </SwiperSlide>
+                ))}
             </Swiper>
+
+            {/* 🔄 Pagination */}
+            <div className="flex justify-between items-center mt-6">
+                <span className="opacity-70">
+                    Page {courses ? courses.number + 1 : 1} / {courses?.totalPages ?? 1}
+                </span>
+
+                <div className="flex gap-2">
+                    <button
+                        disabled={pageNumber === 0}
+                        onClick={() => setPageNumber(p => p - 1)}
+                        className="px-4 py-2 rounded-xl border disabled:opacity-40"
+                    >
+                        Prev
+                    </button>
+                    <button
+                        disabled={courses?.last}
+                        onClick={() => setPageNumber(p => p + 1)}
+                        className="px-4 py-2 rounded-xl border disabled:opacity-40"
+                    >
+                        Next
+                    </button>
+                </div>
+            </div>
         </div>
     );
 }
