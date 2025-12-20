@@ -38,14 +38,7 @@ export default function App() {
           {/* หน้า Login */}
           <Route path="/login" element={<Login />} />
 
-          <Route
-            path="/courses"
-            element={
-              <RequireAuth>
-                <CoursePage />
-              </RequireAuth>
-            }
-          />
+          <Route path="/coursesPage" element={<CoursePage />} />
 
           <Route path="/call" element={<CallPage identity="anonymous" />} />
           <Route path="/live" element={<LiveRoomPage />} />

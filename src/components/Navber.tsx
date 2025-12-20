@@ -45,7 +45,10 @@ export default function Menubar() {
         {/* เมนูเดสก์ท็อป */}
         <nav className="hidden lg:flex items-center justify-end mr-8">
           <ul className="flex items-center space-x-6 font-light">
-            <Link to="/courses" className="hover:text-[#EA688E] transition-colors">
+            <Link
+              to="/courses"
+              className="hover:text-[#EA688E] transition-colors"
+            >
               <li className="ibm-plex-sans-thai-light">
                 {lang === "TH" ? "คอร์สเรียน" : "Courses"}
               </li>
@@ -58,12 +61,18 @@ export default function Menubar() {
                 {lang === "TH" ? "รีวิว" : "Reviews"}
               </li>
             </Link>
-            <Link to="/call" className="hover:text-[#EA688E] transition-colors">
+            <Link
+              to="/coursesPage"
+              className="hover:text-[#EA688E] transition-colors"
+            >
               <li className="ibm-plex-sans-thai-light">
                 {lang === "TH" ? "เกี่ยวกับเรา" : "About Us"}
               </li>
             </Link>
-            <Link to="/call" className="hover:text-[#EA688E] transition-colors">
+            <Link
+              to="/coursesPage"
+              className="hover:text-[#EA688E] transition-colors"
+            >
               <li className="ibm-plex-sans-thai-light">
                 {lang === "TH" ? "ติดต่อเรา" : "Contact"}
               </li>
@@ -121,8 +130,9 @@ export default function Menubar() {
         id="side-menu"
         role="dialog"
         aria-modal="true"
-        className={`fixed top-0 right-0 w-[250px] h-full shadow-lg transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"
-          } bg-white z-90 overflow-hidden lg:hidden`}
+        className={`fixed top-0 right-0 w-[250px] h-full shadow-lg transition-transform duration-300 ease-in-out ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        } bg-white z-90 overflow-hidden lg:hidden`}
       >
         <nav className="w-full pt-14 pb-8 text-sm">
           <ul className="list-none relative">
@@ -142,7 +152,7 @@ export default function Menubar() {
               </li>
             </Link>
 
-            <Link to="/call" {...linkProps}>
+            <Link to="/coursesPage" {...linkProps}>
               <li className="mb-[3px] h-[60px] bg-[#F4DADA] hover:bg-[url('/img/Star.gif')] hover:text-white flex items-center text-black">
                 <p className="px-4 font-medium">
                   {lang === "TH" ? "เกี่ยวกับเรา" : "About Us"}
@@ -150,7 +160,7 @@ export default function Menubar() {
               </li>
             </Link>
 
-            <Link to="/call" {...linkProps}>
+            <Link to="/coursesPage" {...linkProps}>
               <li className="mb-[3px] h-[60px] bg-[#FFB6B9] hover:bg-[url('/img/Star.gif')] hover:text-white flex items-center text-black">
                 <p className="px-4 font-medium">
                   {lang === "TH" ? "ติดต่อเรา" : "Contact"}
