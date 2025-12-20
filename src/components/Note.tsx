@@ -295,6 +295,8 @@ export default function Note({
     } catch {}
   };
 
+  const [isComposing, setIsComposing] = useState(false);
+
   const saveNote = () => {
     const startS = stampToS(form.start);
     const endS = form.end ? stampToS(form.end) : startS;
@@ -664,12 +666,35 @@ export default function Note({
                 <textarea
                   ref={textRef}
                   value={form.text}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, text: e.target.value }))
-                  }
                   onFocus={maybePauseOnFocus}
-                  onKeyDown={ensureStartStampedOnFirstType}
-                  onInput={ensureStartStampedOnFirstType}
+                  onCompositionStart={() => setIsComposing(true)}
+                  onCompositionEnd={() => setIsComposing(false)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setForm((f) => ({ ...f, text: v }));
+
+                    // ✅ กันพังตอนพิมพ์ไทย/IME: อย่าตั้งเวลาในช่วง composing
+                    if (isComposing) return;
+
+                    // ✅ stamp ครั้งแรก “หลังจาก” เริ่มมีข้อความจริงๆ
+                    if (
+                      !autoStamped &&
+                      ready &&
+                      !form.start &&
+                      v.trim().length > 0
+                    ) {
+                      try {
+                        const p = playerRef.current;
+                        if (!p) return;
+                        const t = Math.floor(p.getCurrentTime());
+                        setForm((f) => ({
+                          ...f,
+                          start: f.start || sToStamp(t),
+                        }));
+                        setAutoStamped(true);
+                      } catch {}
+                    }
+                  }}
                   rows={7}
                   placeholder="สรุปใจความสำคัญ…"
                   className="w-full rounded-2xl border border-[#f3aec4] px-3 py-2 bg-white text-[#1a1630] text-sm resize-none"

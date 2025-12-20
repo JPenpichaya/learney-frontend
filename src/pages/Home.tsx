@@ -116,18 +116,110 @@ function Coures() {
   return (
     <div className="w-screen min-h-screen p-10 pt-20 flex flex-col">
       <h1 className="Head1 text-center text-[#FBB1A9] mb-4">คอร์สเรียน</h1>
-      <div className="flex flex-col w-full px-80">
-        <div className="w-full flex justify-end pr-5">
-          <button className="px-6 border-2 py-0.5 rounded-full">
-            คอร์สเรียนทั้งหมด
-          </button>
-        </div>
-        <div className="flex max-h-130">
-          <div className="flex-auto px-5 py-5">
-            <div className="w-full rounded-xl h-130 border-2 border-[#F1F069] bg-[#23213B]" />
+      <div className="flex flex-col w-full px-40  items-center  space-y-10">
+        <img
+          src="./img/imgHome/test.svg"
+          alt=""
+          className="w-120 rounded-2xl"
+        />
+        <p className="text-2xl font-bold my-10 mb-15">เลือกแพ็คเกจของคุณ</p>
+        <div className="flex flex-col relative w-full rounded-2xl  bg-gradient-to-t from-[#60628C]/20 via-[#1A1B26]/70 to-[#1D1E2D]/80 to-40%">
+          {/* text */}
+          <div className="flex  text-center w-full h-30 p-10 text-2xl items-center font-bold">
+            <div className="flex-2 max-w-100">
+              <h1 className="">รายการเปรียบเทียบ</h1>
+            </div>
+            <div className="flex-auto max-w-80 w-full ">
+              <h1 className="">พื้นฐาน</h1>
+            </div>
+            <div className="flex-auto text-center max-w-80 w-full ">
+              <h1 className="w-80 gradient-text">พรีเมี่ยม</h1>
+            </div>
           </div>
-          <div className="flex-auto px-5 py-5">
-            <div className="w-full rounded-xl h-130 border-2 border-[#F1F069] bg-[#23213B]" />
+
+          <div className="flex text-center w-full p-10 h-20 text-xl items-center bg-[#60628C]/30">
+            <div className="flex-2 max-w-100">
+              <h1 className="">รูปแบบการเรียน</h1>
+            </div>
+            <div className="flex-auto max-w-80 w-full ">
+              <h1 className="">วีดีโอบันทึกเท่านั้น</h1>
+            </div>
+            <div className="flex-auto max-w-80 w-full ">
+              <h1 className="w-80 text-center">
+                เรียนตามเวลาตัวเอง วีดีโอ + ส่งการบ้าน + Feedback จากครู
+              </h1>
+            </div>
+          </div>
+
+          <div className="flex  text-center w-full h-30 p-10 text-xl items-center">
+            <div className="flex-2 max-w-100">
+              <h1 className="">การบ้าน / Assignment</h1>
+            </div>
+            <div className="flex-auto max-w-80 w-full ">
+              <h1 className="">❌</h1>
+            </div>
+            <div className="flex-auto text-center max-w-80 w-full ">
+              <h1 className="">✅</h1>
+            </div>
+          </div>
+
+          <div className="flex text-center w-full p-10 h-20 text-xl items-center bg-[#60628C]/30">
+            <div className="flex-2 max-w-100">
+              <h1 className="">ซัพพอร์ต / ที่ปรึกษา</h1>
+            </div>
+            <div className="flex-auto max-w-80 w-full ">
+              <h1 className="">❌</h1>
+            </div>
+            <div className="flex-auto text-center max-w-80 w-full ">
+              <h1 className="">✅</h1>
+            </div>
+          </div>
+
+          <div className="flex  text-center w-full h-30 p-10 text-xl items-center">
+            <div className="flex-2 max-w-100">
+              <h1 className="">ระดับความเข้มข้นของการเรียน</h1>
+            </div>
+            <div className="flex-auto max-w-80 w-full ">
+              <h1 className="">❌</h1>
+            </div>
+            <div className="flex-auto text-center max-w-80 w-full ">
+              <h1 className="">✅</h1>
+            </div>
+          </div>
+
+          <div className="flex text-center w-full p-10 h-20 text-xl items-center bg-[#60628C]/30">
+            <div className="flex-2 max-w-100">
+              <h1 className="">ผู้เหมาะสม คนที่อยากเรียนพื้นฐานทั่วไป</h1>
+            </div>
+            <div className="flex-auto max-w-80 w-full ">
+              <h1 className="">Low</h1>
+            </div>
+            <div className="flex-auto text-center max-w-80 w-full ">
+              <h1 className="">High</h1>
+            </div>
+          </div>
+
+          <div className="flex  text-center w-full h-30 p-10 text-xl items-center">
+            <div className="flex-2 max-w-100"></div>
+            <div className="flex-auto max-w-80 w-full ">
+              <button className="px-10 py-4 rounded-full bg-[#2B32A3]/30 font-bold">
+                ซื้อพื้นฐาน
+              </button>
+            </div>
+            <div className="flex-auto text-center max-w-80 w-full ">
+              <button className="z-40 px-10 py-4 rounded-full font-bold bg-gradient-to-r from-[#464B9F] via-[#EA688E] to-[#F1F069]">
+                ซื้อพรีเมี่ยม
+              </button>
+            </div>
+          </div>
+
+          <div className="w-full h-4"></div>
+          <div className="z-10 w-full h-full absolute flex p-4">
+            <div className="flex-2 max-w-100"></div>
+            <div className="flex-auto  max-w-80 w-full"></div>
+            <div className="flex-auto  max-w-80 w-full">
+              <div className="border-3 h-full w-full  box rounded-xl ml-7"></div>
+            </div>
           </div>
         </div>
       </div>

@@ -19,6 +19,12 @@ h2 {
   font-weight: 600;
 }
 
+.box {
+  border-image: linear-gradient(180deg, #F1F069, #F59B58, #E7688F) 1;
+  border-radius: 4rem;
+}
+
+
 
 .Head1 {
   font-size: 2.6rem;

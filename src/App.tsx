@@ -26,12 +26,7 @@ export default function App() {
 
             {/* คอร์สเรียน */}
             <Route path="/call" element={<CallPage identity="anonymous" />} />
-            <Route
-              path="/reviews"
-              element={
-                <VideoSection courseId="1eb885ee-b4b9-4be5-a6d3-d6e037e0c0a7" />
-              }
-            />
+            <Route path="/reviews" element={<VideoSection />} />
 
             {/* 404 */}
             <Route path="*" element={<Navigate to="/" replace />} />

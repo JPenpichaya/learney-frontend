@@ -54,6 +54,48 @@ interface UserCourseApi {
   courseId: string;
 }
 
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
+
+const mockLessonApi: LessonApi[] = [
+  {
+    id: "lesson-1",
+    courseId: "1eb885ee-b4b9-4be5-a6d3-d6e037e0c0a7",
+    title: "Intro",
+    description: "Welcome!",
+    position: 1,
+  },
+  {
+    id: "lesson-2",
+    courseId: "1eb885ee-b4b9-4be5-a6d3-d6e037e0c0a7",
+    title: "Lesson 2",
+    description: "Deep dive",
+    position: 2,
+  },
+];
+
+const mockVideosByLesson: Record<string, VideoApi[]> = {
+  "lesson-1": [
+    {
+      id: "video-1",
+      lessonId: "lesson-1",
+      title: "Intro Video",
+      url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      duration: 120,
+      position: 1,
+    },
+  ],
+  "lesson-2": [
+    {
+      id: "video-2",
+      lessonId: "lesson-2",
+      title: "Lesson 2 Video",
+      url: "https://www.youtube.com/watch?v=ysz5S6PUM-U",
+      duration: 240,
+      position: 1,
+    },
+  ],
+};
+
 /* ---------- helper: extract YT id ---------- */
 function extractYouTubeId(urlOrId: string): string {
   if (!urlOrId) return "";
@@ -76,19 +118,28 @@ async function fetchLessonsByCourse(
   idToken: string,
   baseUrl: string
 ): Promise<LessonApi[]> {
-  const res = await fetch(`${baseUrl}/api/course-lessons/get-by-course`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${idToken}`,
-    },
-    body: JSON.stringify({ uuid: courseId }),
-  });
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch lessons");
+  if (USE_MOCK) {
+    console.warn("🧪 FORCE MOCK lessons");
+    const filtered = mockLessonApi.filter((l) => l.courseId === courseId);
+    return filtered.length ? filtered : mockLessonApi;
   }
-  return await res.json();
+
+  try {
+    const res = await fetch(`${baseUrl}/api/course-lessons/get-by-course`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({ UUID: courseId }),
+    });
+
+    if (!res.ok) throw new Error(`Lessons API failed: ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("⚠️ Using MOCK lessons (API failed):", err);
+    return mockLessonApi;
+  }
 }
 
 /* ---------- API: Videos ---------- */
@@ -97,20 +148,27 @@ async function fetchVideosByLesson(
   idToken: string,
   baseUrl: string
 ): Promise<VideoApi[]> {
-  const res = await fetch(`${baseUrl}/api/course-video/get-by-lesson`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${idToken}`,
-    },
-    body: JSON.stringify({ uuid: lessonId }),
-  });
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch videos");
+  if (USE_MOCK) {
+    console.warn("🧪 FORCE MOCK videos");
+    return mockVideosByLesson[lessonId] ?? [];
   }
 
-  return await res.json();
+  try {
+    const res = await fetch(`${baseUrl}/api/course-video/get-by-lesson`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({ UUID: lessonId }),
+    });
+
+    if (!res.ok) throw new Error(`Videos API failed: ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("⚠️ Using MOCK videos (API failed):", err);
+    return mockVideosByLesson[lessonId] ?? [];
+  }
 }
 
 /* ---------- API: User Course ---------- */
@@ -119,20 +177,22 @@ async function fetchUserCourse(
   idToken: string,
   baseUrl: string
 ) {
-  const res = await fetch(`${baseUrl}/api/user-course/get`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${idToken}`,
-    },
-    body: JSON.stringify(payload),
-  });
+  try {
+    const res = await fetch(`${baseUrl}/api/user-course/get`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify(payload),
+    });
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch user course");
+    if (!res.ok) throw new Error(`UserCourse API failed: ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("⚠️ Using MOCK userCourse (API failed):", err);
+    return { userId: payload.userId, courseId: payload.courseId }; // mock ขั้นต่ำ
   }
-
-  return await res.json();
 }
 
 /* ---------- COMPONENT ---------- */
@@ -143,7 +203,8 @@ export default function VideoSection({ courseId }: CoursePageProps) {
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string>("");
   const { token } = useToken();
   const idToken = token || "";
-  const baseUrl = "";
+  /*--------------- ที่มาของ URL ---------------*/
+  const baseUrl = import.meta.env.VITE_API_BASE;
 
   /* ---------- Load Lessons + UserCourse + First Video ---------- */
   useEffect(() => {
@@ -153,8 +214,8 @@ export default function VideoSection({ courseId }: CoursePageProps) {
       try {
         // 👇 body สำหรับ user-course (ตอนนี้ hard-code userId ไว้ก่อน)
         const userCourseBody: UserCourseApi = {
-          userId: "Yfi1Px8c4MNMsz9MfvWFkVnXmTr2", // TODO: ดึงจาก auth context ในอนาคต
-          courseId,
+          userId: "Yfi1Px8c4MNMsz9MfvWFkVnXmTr2",
+          courseId: "1eb885ee-b4b9-4be5-a6d3-d6e037e0c0a7",
         };
 
         // ยิง API พร้อมกัน 2 ตัว: lessons + userCourse
