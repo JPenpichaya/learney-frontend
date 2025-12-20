@@ -2,11 +2,12 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Mainpage from "./pages/Home.tsx";
 import Login from "./pages/Login.tsx";
 import { CallPage } from "./components/VideoCall";
-import VideoSection from "./components/Corse.tsx";
+// import VideoSection from "./components/Corse.tsx";
 import { TokenProvider } from "./context/TokenContext";
 import Menubar from "./components/Navber.tsx";
 import "./index.css";
 import "./App.css";
+import LessonTimeline from "./components/CourseTry.tsx";
 
 export default function App() {
   return (
@@ -26,7 +27,8 @@ export default function App() {
 
             {/* คอร์สเรียน */}
             <Route path="/call" element={<CallPage identity="anonymous" />} />
-            <Route path="/reviews" element={<VideoSection />} />
+            {/* <Route path="/reviews" element={<VideoSection />} /> */}
+            <Route path="/courses" element={<LessonTimeline />} />
 
             {/* 404 */}
             <Route path="*" element={<Navigate to="/" replace />} />

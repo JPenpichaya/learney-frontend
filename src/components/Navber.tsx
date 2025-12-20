@@ -51,7 +51,7 @@ export default function Menubar() {
               </li>
             </Link>
             <Link
-              to="/reviews"
+              to="/courses"
               className="hover:text-[#EA688E] transition-colors"
             >
               <li className="ibm-plex-sans-thai-light">
@@ -121,9 +121,8 @@ export default function Menubar() {
         id="side-menu"
         role="dialog"
         aria-modal="true"
-        className={`fixed top-0 right-0 w-[250px] h-full shadow-lg transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        } bg-white z-90 overflow-hidden lg:hidden`}
+        className={`fixed top-0 right-0 w-[250px] h-full shadow-lg transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"
+          } bg-white z-90 overflow-hidden lg:hidden`}
       >
         <nav className="w-full pt-14 pb-8 text-sm">
           <ul className="list-none relative">
