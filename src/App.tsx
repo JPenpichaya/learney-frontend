@@ -7,7 +7,7 @@ import { TokenProvider } from "./context/TokenContext";
 import Menubar from "./components/Navber.tsx";
 import "./index.css";
 import "./App.css";
-import LessonTimeline from "./components/CourseTry.tsx";
+import LessonVideoTracker from "./components/CourseTry.tsx";
 
 export default function App() {
   return (
@@ -28,7 +28,7 @@ export default function App() {
             {/* คอร์สเรียน */}
             <Route path="/call" element={<CallPage identity="anonymous" />} />
             {/* <Route path="/reviews" element={<VideoSection />} /> */}
-            <Route path="/courses" element={<LessonTimeline />} />
+            <Route path="/courses" element={<LessonVideoTracker useMock />} />
 
             {/* 404 */}
             <Route path="*" element={<Navigate to="/" replace />} />
