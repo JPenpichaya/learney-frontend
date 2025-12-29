@@ -429,7 +429,6 @@ function ReviewsContract() {
           </div>
           <div className="flex-[0.8] flex pt-5 justify-center items-center">
             <div className="flex-1 px-5">
-              8 15 0 5{" "}
               <ul className="mt-2">
                 <button>
                   <img
