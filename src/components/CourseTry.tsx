@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
+/* ===================== TYPES ===================== */
 type ProgressStatus = "LOCKED" | "AVAILABLE" | "IN_PROGRESS" | "COMPLETED";
 type Mode = "subject" | "note" | "all";
 
@@ -16,8 +17,8 @@ type VideoProgress = {
 
 type LessonProgressApi = {
   lessonId: string; // UUID
-  videoes?: VideoProgress[]; // API typo support
-  videos?: VideoProgress[]; // just in case
+  videoes?: VideoProgress[];
+  videos?: VideoProgress[];
 };
 
 type LessonSection = {
@@ -27,10 +28,10 @@ type LessonSection = {
 
 type Props = {
   userId?: string;
-  courseId?: string; // UUID
+  courseId?: string;
   idToken?: string;
-  apiBaseUrl?: string; // e.g. https://your-domain.com
-  useMock?: boolean; // default true for demo
+  apiBaseUrl?: string;
+  useMock?: boolean;
 };
 
 /* ===================== NOTE TYPES ===================== */
@@ -38,8 +39,8 @@ type NoteItem = {
   id: string;
   videoId: string;
   lessonId: string;
-  start: number; // seconds
-  end: number; // seconds
+  start: number;
+  end: number;
   text: string;
   tags: string[];
   createdAt: string;
@@ -67,7 +68,7 @@ function pill(status: ProgressStatus) {
     case "IN_PROGRESS":
       return "bg-[#FFEE91] text-black";
     case "AVAILABLE":
-      return "bg-[#464B9F] text-black";
+      return "bg-[#464B9F] text-white";
     case "LOCKED":
     default:
       return "bg-slate-600 text-white";
@@ -81,14 +82,13 @@ function nodeColor(status: ProgressStatus) {
     case "IN_PROGRESS":
       return "bg-[#FFEE91] text-black";
     case "AVAILABLE":
-      return "bg-[#464B9F] text-black";
+      return "bg-[#464B9F] text-white";
     case "LOCKED":
     default:
       return "bg-slate-500 text-white";
   }
 }
 
-/** Lesson status derived from videos */
 function deriveLessonStatus(videos: VideoProgress[]): ProgressStatus {
   if (videos.length === 0) return "LOCKED";
   const allCompleted = videos.every(
@@ -117,7 +117,6 @@ function deriveLessonProgress(videos: VideoProgress[]) {
   return { duration, completedAt, pct };
 }
 
-/** Normalize API payload: supports "videoes" misspelling */
 function normalizeLessons(api: LessonProgressApi[]): LessonSection[] {
   return (api || []).map((l) => {
     const raw = l.videoes ?? l.videos ?? [];
@@ -128,7 +127,7 @@ function normalizeLessons(api: LessonProgressApi[]): LessonSection[] {
   });
 }
 
-/** Mock data in your new structure */
+/* ===================== Mock ===================== */
 function makeMockApiResponse(): LessonProgressApi[] {
   const uuid = () =>
     (globalThis.crypto as any)?.randomUUID?.() ??
@@ -145,12 +144,11 @@ function makeMockApiResponse(): LessonProgressApi[] {
         {
           id: uuid(),
           title: "Verb",
-          description:
-            "Understand what verbs are and how to use them in sentences.",
+          description: "Understand what verbs are and how to use them.",
           status: "COMPLETED",
           completedAt: 600,
           duration: 600,
-          url: "https://example.com/video/verb",
+          url: "https://www.youtube.com/watch?v=_iIUGEOreiw&list=RD_iIUGEOreiw&start_radio=1",
           position: 1,
         },
         {
@@ -160,7 +158,7 @@ function makeMockApiResponse(): LessonProgressApi[] {
           status: "COMPLETED",
           completedAt: 300,
           duration: 300,
-          url: "https://example.com/video/verb-examples",
+          url: "https://www.youtube.com/watch?v=2C4xsP1xR0Q&list=RD2C4xsP1xR0Q&start_radio=1",
           position: 2,
         },
       ],
@@ -171,11 +169,11 @@ function makeMockApiResponse(): LessonProgressApi[] {
         {
           id: uuid(),
           title: "Past Simple",
-          description: "Learn past simple structure and common usage patterns.",
+          description: "Learn past simple structure and usage patterns.",
           status: "IN_PROGRESS",
           completedAt: 240,
           duration: 600,
-          url: "https://example.com/video/past-simple",
+          url: "https://www.youtube.com/watch?v=p0JFc5giu9U&list=RDp0JFc5giu9U&start_radio=1",
           position: 1,
         },
         {
@@ -185,7 +183,7 @@ function makeMockApiResponse(): LessonProgressApi[] {
           status: "AVAILABLE",
           completedAt: 0,
           duration: 480,
-          url: "https://example.com/video/past-simple-practice",
+          url: "https://www.youtube.com/watch?v=p0JFc5giu9U&list=RDp0JFc5giu9U&start_radio=1",
           position: 2,
         },
         {
@@ -195,7 +193,7 @@ function makeMockApiResponse(): LessonProgressApi[] {
           status: "LOCKED",
           completedAt: 0,
           duration: 420,
-          url: "https://example.com/video/past-simple-quiz",
+          url: "https://www.youtube.com/watch?v=p0JFc5giu9U&list=RDp0JFc5giu9U&start_radio=1",
           position: 3,
         },
       ],
@@ -210,7 +208,7 @@ function makeMockApiResponse(): LessonProgressApi[] {
           status: "LOCKED",
           completedAt: 0,
           duration: 600,
-          url: "https://example.com/video/verb-ing",
+          url: "https://www.youtube.com/watch?v=p0JFc5giu9U&list=RDp0JFc5giu9U&start_radio=1",
           position: 1,
         },
       ],
@@ -218,7 +216,7 @@ function makeMockApiResponse(): LessonProgressApi[] {
   ];
 }
 
-/** API call: POST /api/lesson-progress/get-all-details */
+/* ===================== API ===================== */
 async function fetchLessonProgress(params: {
   apiBaseUrl: string;
   userId: string;
@@ -247,9 +245,7 @@ async function fetchLessonProgress(params: {
   return normalizeLessons(data);
 }
 
-/* ===================== Notes Storage =====================
-   - localStorage key แยกตาม courseId + userId (ถ้ามี)
-*/
+/* ===================== Notes storage ===================== */
 function uid() {
   return (
     (globalThis.crypto as any)?.randomUUID?.() ??
@@ -271,11 +267,85 @@ function loadNotes(key: string): NotesByVideo {
 function saveNotes(key: string, data: NotesByVideo) {
   try {
     localStorage.setItem(key, JSON.stringify(data));
+  } catch {}
+}
+
+/* ===================== YouTube helpers ===================== */
+function isProbablyYouTube(url: string) {
+  return /youtube\.com|youtu\.be/i.test(url);
+}
+
+function getYouTubeVideoId(url: string): string | null {
+  try {
+    // youtu.be/VIDEOID
+    const short = url.match(/youtu\.be\/([a-zA-Z0-9_-]{6,})/);
+    if (short?.[1]) return short[1];
+
+    // youtube.com/watch?v=VIDEOID
+    const u = new URL(url);
+    const v = u.searchParams.get("v");
+    if (v) return v;
+
+    // youtube.com/embed/VIDEOID
+    const embed = url.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]{6,})/);
+    if (embed?.[1]) return embed[1];
+
+    return null;
   } catch {
-    // ignore
+    // fallback regex
+    const m = url.match(/[?&]v=([a-zA-Z0-9_-]{6,})/);
+    return m?.[1] ?? null;
   }
 }
 
+declare global {
+  interface Window {
+    YT?: any;
+    onYouTubeIframeAPIReady?: () => void;
+  }
+}
+
+function useYouTubeApiReady() {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    // already loaded
+    if (window.YT && window.YT.Player) {
+      setReady(true);
+      return;
+    }
+
+    // if script already exists, just wait for ready
+    const existing = document.querySelector(
+      'script[src="https://www.youtube.com/iframe_api"]'
+    ) as HTMLScriptElement | null;
+
+    window.onYouTubeIframeAPIReady = () => setReady(true);
+
+    if (!existing) {
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      tag.async = true;
+      document.head.appendChild(tag);
+    }
+
+    // fallback poll (กันบางกรณี callback ไม่ยิง)
+    const t = window.setInterval(() => {
+      if (window.YT && window.YT.Player) {
+        window.clearInterval(t);
+        setReady(true);
+      }
+    }, 250);
+
+    return () => window.clearInterval(t);
+  }, []);
+
+  return ready;
+}
+
+/* ===================== Component ===================== */
 export default function LessonVideoTracker({
   userId,
   courseId,
@@ -291,18 +361,13 @@ export default function LessonVideoTracker({
   );
   const [activeVideoId, setActiveVideoId] = useState<string>("");
 
-  // ✅ panel toggle (เหมือนรูป)
   const [panelOpen, setPanelOpen] = useState(true);
-
-  // ✅ mode: subject/note/all
   const [mode, setMode] = useState<Mode>("subject");
 
-  // ====== ปรับให้ตรงโปรเจกต์คุณ ======
-  const TOP_OFFSET = 64; // ความสูง Menubar (px)
-  const PANEL_W = 390; // ความกว้าง panel ด้านขวา
-  // ===================================
+  const TOP_OFFSET = 64;
+  const PANEL_W = 390;
 
-  // ✅ Notes key / state
+  // Notes
   const NOTES_KEY = useMemo(() => {
     const cid = courseId || "demoCourse";
     const uid2 = userId || "anon";
@@ -313,18 +378,15 @@ export default function LessonVideoTracker({
     loadNotes(NOTES_KEY)
   );
 
-  useEffect(() => {
-    setNotesByVideo(loadNotes(NOTES_KEY));
-  }, [NOTES_KEY]);
+  useEffect(() => setNotesByVideo(loadNotes(NOTES_KEY)), [NOTES_KEY]);
+  useEffect(
+    () => saveNotes(NOTES_KEY, notesByVideo),
+    [NOTES_KEY, notesByVideo]
+  );
 
-  useEffect(() => {
-    saveNotes(NOTES_KEY, notesByVideo);
-  }, [NOTES_KEY, notesByVideo]);
-
-  // ✅ menubar-style scroll lock + backdrop (จอเล็ก)
+  // scroll lock (mobile)
   useEffect(() => {
     const prev = document.body.style.overflow;
-    // เวลาพาเนลเปิดบนมือถือ: ล็อกสกอลล์
     const shouldLock =
       panelOpen && window.matchMedia("(max-width: 1023px)").matches;
     document.body.style.overflow = shouldLock ? "hidden" : prev || "";
@@ -333,7 +395,7 @@ export default function LessonVideoTracker({
     };
   }, [panelOpen]);
 
-  // Load real API if requested
+  // Load real API
   useEffect(() => {
     const shouldFetch = !useMock && apiBaseUrl && userId && courseId && idToken;
     if (!shouldFetch) return;
@@ -341,8 +403,7 @@ export default function LessonVideoTracker({
     let cancelled = false;
     fetchLessonProgress({ apiBaseUrl, userId, courseId, idToken })
       .then((normalized) => {
-        if (cancelled) return;
-        setLessons(normalized);
+        if (!cancelled) setLessons(normalized);
       })
       .catch((e) => console.error(e));
 
@@ -389,7 +450,7 @@ export default function LessonVideoTracker({
     [flatVideos, activeVideoId]
   );
 
-  // Choose default active video
+  // default active
   useEffect(() => {
     if (activeVideoId) return;
     const firstUnlocked = flatVideos.find((x) => x.video.status !== "LOCKED");
@@ -401,7 +462,7 @@ export default function LessonVideoTracker({
     }
   }, [activeVideoId, flatVideos]);
 
-  // Ensure lesson containing active video is expanded
+  // expand active lesson
   useEffect(() => {
     if (!active) return;
     setExpandedLessonIds((prev) => {
@@ -482,6 +543,11 @@ export default function LessonVideoTracker({
       completedAt: 0,
       status: v.status === "LOCKED" ? "LOCKED" : "AVAILABLE",
     });
+
+    // reset player time too
+    if (activeVideoId === videoId) {
+      seekAny(0, false);
+    }
   }
 
   function goNextVideo() {
@@ -495,7 +561,6 @@ export default function LessonVideoTracker({
     if (next) setActiveVideoId(next.video.id);
   }
 
-  // ✅ progress bar แบบในรูป (รวมทั้งคอร์ส)
   const overallPct = useMemo(() => {
     const total = flatVideos.reduce(
       (acc, x) => acc + (x.video.duration || 0),
@@ -509,7 +574,7 @@ export default function LessonVideoTracker({
     return total > 0 ? Math.round((done / total) * 100) : 0;
   }, [flatVideos]);
 
-  /* ===================== NOTES LOGIC ===================== */
+  /* ===================== Notes logic ===================== */
   const activeNotes = useMemo(() => {
     if (!activeVideoId) return [];
     return notesByVideo[activeVideoId] ?? [];
@@ -518,7 +583,6 @@ export default function LessonVideoTracker({
   const allNotes = useMemo(() => {
     const items: NoteItem[] = [];
     Object.values(notesByVideo).forEach((arr) => items.push(...arr));
-    // newest first
     return items.sort((a, b) =>
       (b.updatedAt ?? b.createdAt).localeCompare(a.updatedAt ?? a.createdAt)
     );
@@ -536,7 +600,6 @@ export default function LessonVideoTracker({
     noteId: string;
   } | null>(null);
 
-  // reset draft when active video changes
   useEffect(() => {
     setEditing(null);
     setNoteDraft({ start: 0, end: 10, text: "", tags: "" });
@@ -642,7 +705,6 @@ export default function LessonVideoTracker({
     setNoteDraft({ start: 0, end: 10, text: "", tags: "" });
   }
 
-  // Map videoId -> titles for All Note
   const videoTitleMap = useMemo(() => {
     const m = new Map<string, { lessonTitle: string; videoTitle: string }>();
     flatVideos.forEach((x) =>
@@ -654,10 +716,258 @@ export default function LessonVideoTracker({
     return m;
   }, [flatVideos]);
 
-  // ===================== UI =====================
+  /* ===================== PLAYER (Hybrid: YouTube + HTML5) ===================== */
+  const ytReady = useYouTubeApiReady();
+  const ytPlayerRef = useRef<any>(null);
+  const htmlVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  const [pendingSeek, setPendingSeek] = useState<{
+    videoId: string;
+    time: number;
+    autoplay?: boolean;
+  } | null>(null);
+
+  const [pauseWhileTyping, setPauseWhileTyping] = useState(true);
+
+  // polling interval (youtube)
+  const ytPollRef = useRef<number | null>(null);
+  const lastTickRef = useRef(0);
+
+  function stopYtPolling() {
+    if (ytPollRef.current) {
+      window.clearInterval(ytPollRef.current);
+      ytPollRef.current = null;
+    }
+  }
+
+  function startYtPolling() {
+    stopYtPolling();
+    ytPollRef.current = window.setInterval(() => {
+      if (!active || !ytPlayerRef.current) return;
+
+      const now = Date.now();
+      if (now - lastTickRef.current < 800) return;
+      lastTickRef.current = now;
+
+      try {
+        const t = Number(ytPlayerRef.current.getCurrentTime?.() ?? 0);
+        setProgress(active.video.id, t);
+
+        const dur = Number(ytPlayerRef.current.getDuration?.() ?? 0);
+        if (dur > 0 && Math.abs((active.video.duration || 0) - dur) > 1) {
+          updateVideo(active.video.id, { duration: Math.floor(dur) });
+        }
+      } catch {}
+    }, 250);
+  }
+
+  function destroyYtPlayer() {
+    stopYtPolling();
+    try {
+      ytPlayerRef.current?.destroy?.();
+    } catch {}
+    ytPlayerRef.current = null;
+  }
+
+  // create/destroy youtube player when active changes
+  useEffect(() => {
+    if (!active) return;
+
+    const isYT = isProbablyYouTube(active.video.url);
+    if (!isYT) {
+      // switching to HTML5: destroy YT
+      destroyYtPlayer();
+      return;
+    }
+
+    if (!ytReady) return;
+
+    const vid = getYouTubeVideoId(active.video.url);
+    if (!vid) return;
+
+    // new mount id per video (so re-create correctly)
+    const mountId = `yt-player-${active.video.id}`;
+    const mount = document.getElementById(mountId);
+    if (!mount) return;
+
+    destroyYtPlayer();
+
+    ytPlayerRef.current = new window.YT.Player(mountId, {
+      videoId: vid,
+      playerVars: {
+        rel: 0,
+        modestbranding: 1,
+        playsinline: 1,
+      },
+      events: {
+        onReady: () => {
+          // sync to completedAt
+          try {
+            const dur = Number(ytPlayerRef.current.getDuration?.() ?? 0);
+            const finalDur = dur > 0 ? dur : active.video.duration || 0;
+            if (
+              dur > 0 &&
+              (!active.video.duration || active.video.duration <= 0)
+            ) {
+              updateVideo(active.video.id, { duration: Math.floor(dur) });
+            }
+            const t = clamp(active.video.completedAt || 0, 0, finalDur);
+            ytPlayerRef.current.seekTo?.(t, true);
+
+            // apply pending seek if any
+            if (pendingSeek && pendingSeek.videoId === active.video.id) {
+              const tt = clamp(pendingSeek.time, 0, finalDur);
+              ytPlayerRef.current.seekTo?.(tt, true);
+              setProgress(active.video.id, tt);
+              if (pendingSeek.autoplay) ytPlayerRef.current.playVideo?.();
+              setPendingSeek(null);
+            }
+          } catch {}
+        },
+        onStateChange: (e: any) => {
+          // YT.PlayerState: -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering
+          const st = e?.data;
+          if (st === 1) startYtPolling();
+          if (st === 2) stopYtPolling();
+          if (st === 0) {
+            stopYtPolling();
+            // ended => complete
+            markComplete(active.video.id);
+          }
+        },
+      },
+    });
+
+    return () => {
+      // destroy when unmount/active change
+      destroyYtPlayer();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active?.video.id, ytReady]);
+
+  // HTML5 timeupdate
+  function handleHtmlTimeUpdate() {
+    if (!active || !htmlVideoRef.current) return;
+
+    const now = Date.now();
+    if (now - lastTickRef.current < 800) return;
+    lastTickRef.current = now;
+
+    const t = htmlVideoRef.current.currentTime || 0;
+    setProgress(active.video.id, t);
+  }
+
+  function handleHtmlLoadedMetadata() {
+    if (!active || !htmlVideoRef.current) return;
+    const el = htmlVideoRef.current;
+
+    const dur = el.duration;
+    if (
+      Number.isFinite(dur) &&
+      dur > 0 &&
+      (!active.video.duration || active.video.duration <= 0)
+    ) {
+      updateVideo(active.video.id, { duration: Math.floor(dur) });
+    }
+
+    try {
+      el.currentTime = clamp(
+        active.video.completedAt || 0,
+        0,
+        active.video.duration || Math.floor(dur) || 0
+      );
+    } catch {}
+
+    if (pendingSeek && pendingSeek.videoId === active.video.id) {
+      try {
+        const tt = clamp(
+          pendingSeek.time,
+          0,
+          active.video.duration || Math.floor(dur) || 0
+        );
+        el.currentTime = tt;
+        setProgress(active.video.id, tt);
+        if (pendingSeek.autoplay) el.play().catch(() => {});
+      } catch {}
+      setPendingSeek(null);
+    }
+  }
+
+  function handleHtmlEnded() {
+    if (!active) return;
+    markComplete(active.video.id);
+  }
+
+  // unified controls
+  function playAny() {
+    if (!active || active.video.status === "LOCKED") return;
+
+    if (isProbablyYouTube(active.video.url)) {
+      ytPlayerRef.current?.playVideo?.();
+      return;
+    }
+    htmlVideoRef.current?.play().catch(() => {});
+  }
+
+  function pauseAny() {
+    if (!active) return;
+    if (isProbablyYouTube(active.video.url)) {
+      ytPlayerRef.current?.pauseVideo?.();
+      return;
+    }
+    htmlVideoRef.current?.pause();
+  }
+
+  function seekAny(time: number, autoplay = false) {
+    if (!active) return;
+
+    const t = clamp(time, 0, active.video.duration || Number.MAX_SAFE_INTEGER);
+
+    if (isProbablyYouTube(active.video.url)) {
+      // if player not ready yet => pending
+      if (!ytPlayerRef.current?.seekTo) {
+        setPendingSeek({ videoId: active.video.id, time: t, autoplay });
+        return;
+      }
+      ytPlayerRef.current.seekTo(t, true);
+      setProgress(active.video.id, t);
+      if (autoplay) ytPlayerRef.current.playVideo?.();
+      return;
+    }
+
+    // html5
+    const el = htmlVideoRef.current;
+    if (!el) {
+      setPendingSeek({ videoId: active.video.id, time: t, autoplay });
+      return;
+    }
+    try {
+      el.currentTime = t;
+      setProgress(active.video.id, t);
+      if (autoplay) el.play().catch(() => {});
+    } catch {
+      setPendingSeek({ videoId: active.video.id, time: t, autoplay });
+    }
+  }
+
+  function jumpTo(videoId: string, time: number, autoplay = false) {
+    setActiveVideoId(videoId);
+    setMode("subject");
+    setPendingSeek({ videoId, time, autoplay });
+  }
+
+  // apply pending seek when active changes (works for both html5/yt)
+  useEffect(() => {
+    if (!active || !pendingSeek) return;
+    if (pendingSeek.videoId !== active.video.id) return;
+    // try immediately (if ready)
+    seekAny(pendingSeek.time, !!pendingSeek.autoplay);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active?.video.id]);
+
+  /* ===================== UI ===================== */
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#47304B]  to-[#070D2D] text-white">
-      {/* ✅ Backdrop แบบ Menubar (เฉพาะมือถือ) */}
       {panelOpen && (
         <div
           className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden"
@@ -665,7 +975,6 @@ export default function LessonVideoTracker({
         />
       )}
 
-      {/* MAIN CONTENT: เว้นที่ด้านขวาให้ panel (ไม่โดนทับ) */}
       <div
         className="min-h-screen transition-[padding-right] duration-300"
         style={{ paddingRight: panelOpen ? PANEL_W : 0 }}
@@ -674,7 +983,6 @@ export default function LessonVideoTracker({
           className="mx-auto max-w-6xl px-4"
           style={{ paddingTop: TOP_OFFSET + 24 }}
         >
-          {/* เนื้อหาเดิมฝั่งซ้าย/กลาง (Active video details) */}
           <section className="rounded-2xl bg-white/5 p-6 shadow-xl ring-1 ring-white/10">
             {active ? (
               <>
@@ -700,60 +1008,93 @@ export default function LessonVideoTracker({
                   </span>
                 </div>
 
-                <div className="mt-6 rounded-xl bg-black/20 p-4 ring-1 ring-white/10">
-                  <div className="flex items-center justify-between text-sm text-white/80">
-                    <span>Progress</span>
-                    <span>
-                      {formatTime(active.video.completedAt)} /{" "}
-                      {formatTime(active.video.duration)}
-                    </span>
-                  </div>
+                {/* PLAYER */}
+                <div className="mt-6 rounded-2xl bg-black/25 ring-1 ring-white/10 overflow-hidden">
+                  {isProbablyYouTube(active.video.url) ? (
+                    <div className="w-full aspect-video bg-black">
+                      {/* mount node for YT player */}
+                      <div
+                        id={`yt-player-${active.video.id}`}
+                        className="w-full h-full"
+                      />
+                    </div>
+                  ) : (
+                    <video
+                      ref={htmlVideoRef}
+                      className="w-full aspect-video bg-black"
+                      src={active.video.url}
+                      controls
+                      onTimeUpdate={handleHtmlTimeUpdate}
+                      onLoadedMetadata={handleHtmlLoadedMetadata}
+                      onEnded={handleHtmlEnded}
+                      onPlay={(e) => {
+                        if (active.video.status === "LOCKED") {
+                          (e.currentTarget as HTMLVideoElement).pause();
+                        }
+                      }}
+                    />
+                  )}
 
-                  <input
-                    className="mt-3 w-full"
-                    type="range"
-                    min={0}
-                    max={active.video.duration}
-                    value={active.video.completedAt}
-                    onChange={(e) =>
-                      setProgress(active.video.id, Number(e.target.value))
-                    }
-                    disabled={active.video.status === "LOCKED"}
-                  />
+                  <div className="p-4">
+                    <div className="flex items-center justify-between text-sm text-white/80">
+                      <span>Time</span>
+                      <span>
+                        {formatTime(active.video.completedAt)} /{" "}
+                        {formatTime(active.video.duration)}
+                      </span>
+                    </div>
 
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        window.open(
-                          active.video.url,
-                          "_blank",
-                          "noopener,noreferrer"
-                        )
-                      }
-                      className="rounded-full bg-sky-400 px-4 py-2 text-sm font-semibold text-black hover:brightness-95"
-                      disabled={active.video.status === "LOCKED"}
-                    >
-                      Play Lesson
-                    </button>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={playAny}
+                        className="rounded-full bg-sky-400 px-4 py-2 text-sm font-semibold text-black hover:brightness-95"
+                        disabled={active.video.status === "LOCKED"}
+                      >
+                        Play
+                      </button>
 
-                    <button
-                      type="button"
-                      onClick={() => markComplete(active.video.id)}
-                      className="rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-black hover:brightness-95"
-                      disabled={active.video.status === "LOCKED"}
-                    >
-                      Mark Complete
-                    </button>
+                      <button
+                        type="button"
+                        onClick={pauseAny}
+                        className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15"
+                        disabled={active.video.status === "LOCKED"}
+                      >
+                        Pause
+                      </button>
 
-                    <button
-                      type="button"
-                      onClick={() => resetVideo(active.video.id)}
-                      className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15"
-                      disabled={active.video.status === "LOCKED"}
-                    >
-                      Reset
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => markComplete(active.video.id)}
+                        className="rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-black hover:brightness-95"
+                        disabled={active.video.status === "LOCKED"}
+                      >
+                        Mark Complete
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => resetVideo(active.video.id)}
+                        className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15"
+                        disabled={active.video.status === "LOCKED"}
+                      >
+                        Reset
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          window.open(
+                            active.video.url,
+                            "_blank",
+                            "noopener,noreferrer"
+                          )
+                        }
+                        className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15"
+                      >
+                        Open
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -774,7 +1115,7 @@ export default function LessonVideoTracker({
         </div>
       </div>
 
-      {/* RIGHT PANEL (เหมือนรูป) */}
+      {/* RIGHT PANEL */}
       <aside
         className="fixed right-0 bg-[#23213B] z-50 transition-transform duration-300 ease-in-out"
         style={{
@@ -785,7 +1126,6 @@ export default function LessonVideoTracker({
         }}
       >
         <div className="h-full bg-white/5 backdrop-blur-md ring-1 ring-white/10 relative">
-          {/* Arrow handle (โผล่ออกซ้าย) */}
           <button
             type="button"
             onClick={() => setPanelOpen((v) => !v)}
@@ -797,7 +1137,6 @@ export default function LessonVideoTracker({
             </span>
           </button>
 
-          {/* Tabs row (✅ กดได้ เปลี่ยนโหมด) */}
           <div className="flex items-center justify-end gap-2 pr-20 mb-5 pt-5">
             <button
               type="button"
@@ -839,7 +1178,6 @@ export default function LessonVideoTracker({
             </button>
           </div>
 
-          {/* Title + progress bar */}
           <div className="px-6 pt-3">
             <div className="text-center text-4xl font-extrabold tracking-wide">
               PROGRESS
@@ -853,9 +1191,8 @@ export default function LessonVideoTracker({
             </div>
           </div>
 
-          {/* Content area */}
-          <div className="px-6  pt-6 pb-10 overflow-auto h-[calc(100%-150px)]">
-            {/* ===================== SUBJECT ===================== */}
+          <div className="px-6 pt-6 pb-10 overflow-auto h-[calc(100%-150px)]">
+            {/* SUBJECT */}
             {mode === "subject" && (
               <ul>
                 {lessonView.map((lesson, idx) => {
@@ -903,6 +1240,12 @@ export default function LessonVideoTracker({
                             {isExpanded ? "Hide" : "Show"}
                           </div>
                         </div>
+
+                        <div className="mt-2 text-xs text-white/60">
+                          {formatTime(lesson.progress.completedAt)} /{" "}
+                          {formatTime(lesson.progress.duration)} •{" "}
+                          {lesson.progress.pct}%
+                        </div>
                       </button>
 
                       {isExpanded && (
@@ -910,6 +1253,15 @@ export default function LessonVideoTracker({
                           {lesson.videos.map((v) => {
                             const isActive = v.id === activeVideoId;
                             const disabled = v.status === "LOCKED";
+
+                            const pct =
+                              v.duration > 0
+                                ? Math.round(
+                                    (clamp(v.completedAt || 0, 0, v.duration) /
+                                      v.duration) *
+                                      100
+                                  )
+                                : 0;
 
                             return (
                               <button
@@ -938,6 +1290,11 @@ export default function LessonVideoTracker({
                                       <p className="text-sm text-white/70 line-clamp-2">
                                         {v.description}
                                       </p>
+
+                                      <div className="mt-2 text-xs text-white/60">
+                                        {formatTime(v.completedAt)} /{" "}
+                                        {formatTime(v.duration)} • {pct}%
+                                      </div>
                                     </div>
                                   </div>
                                   <div className="text-sm text-white/80 shrink-0">
@@ -955,7 +1312,7 @@ export default function LessonVideoTracker({
               </ul>
             )}
 
-            {/* ===================== NOTE (active video) ===================== */}
+            {/* NOTE */}
             {mode === "note" && (
               <div className="space-y-4">
                 <div className="rounded-2xl bg-white/5 ring-1 ring-white/10 p-4">
@@ -972,7 +1329,28 @@ export default function LessonVideoTracker({
                   </div>
                 </div>
 
-                {/* editor */}
+                <div className="rounded-2xl bg-white/5 ring-1 ring-white/10 p-4 flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold">Pause while typing</div>
+                    <div className="text-xs text-white/60">
+                      โฟกัสช่องพิมพ์แล้ววิดีโอจะหยุดอัตโนมัติ
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setPauseWhileTyping((v) => !v)}
+                    className={[
+                      "rounded-full px-4 py-2 text-xs font-semibold transition ring-1",
+                      pauseWhileTyping
+                        ? "bg-emerald-400 text-black ring-white/10"
+                        : "bg-white/10 text-white ring-white/10 hover:bg-white/15",
+                    ].join(" ")}
+                  >
+                    {pauseWhileTyping ? "ON" : "OFF"}
+                  </button>
+                </div>
+
                 <div className="rounded-2xl bg-white/5 ring-1 ring-white/10 p-4">
                   <div className="flex items-center justify-between">
                     <div className="font-semibold">
@@ -991,6 +1369,7 @@ export default function LessonVideoTracker({
                       onChange={(e) =>
                         setNoteDraft((d) => ({ ...d, text: e.target.value }))
                       }
+                      onFocus={() => pauseWhileTyping && pauseAny()}
                       placeholder="พิมพ์โน้ต..."
                     />
                   </label>
@@ -1003,6 +1382,7 @@ export default function LessonVideoTracker({
                       onChange={(e) =>
                         setNoteDraft((d) => ({ ...d, tags: e.target.value }))
                       }
+                      onFocus={() => pauseWhileTyping && pauseAny()}
                       placeholder="grammar, tense, exam"
                     />
                   </label>
@@ -1039,15 +1419,13 @@ export default function LessonVideoTracker({
               </div>
             )}
 
-            {/* ===================== ALL NOTE ===================== */}
+            {/* ALL NOTE */}
             {mode === "all" && (
               <AllNotesPanel
                 allNotes={allNotes}
                 videoTitleMap={videoTitleMap}
-                onJump={(videoId) => {
-                  setActiveVideoId(videoId);
-                  setMode("subject"); // กระโดดไป subject เพื่อเห็น video ใน timeline (เลือกได้)
-                }}
+                onJump={(videoId, t) => jumpTo(videoId, t, false)}
+                onDelete={(videoId, noteId) => deleteNote(videoId, noteId)}
               />
             )}
           </div>
@@ -1061,9 +1439,10 @@ export default function LessonVideoTracker({
 function AllNotesPanel(props: {
   allNotes: NoteItem[];
   videoTitleMap: Map<string, { lessonTitle: string; videoTitle: string }>;
-  onJump: (videoId: string) => void;
+  onJump: (videoId: string, time: number) => void;
+  onDelete: (videoId: string, noteId: string) => void;
 }) {
-  const { allNotes, videoTitleMap, onJump } = props;
+  const { allNotes, videoTitleMap, onJump, onDelete } = props;
   const [q, setQ] = useState("");
 
   const filtered = useMemo(() => {
@@ -1120,13 +1499,23 @@ function AllNotesPanel(props: {
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => onJump(n.videoId)}
-                  className="text-xs bg-white/10 hover:bg-white/15 px-3 py-1 rounded-full shrink-0"
-                >
-                  Jump
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => onJump(n.videoId, n.start)}
+                    className="text-xs bg-white/10 hover:bg-white/15 px-3 py-1 rounded-full"
+                  >
+                    Jump
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onDelete(n.videoId, n.id)}
+                    className="text-xs bg-red-400/80 hover:bg-red-400 px-3 py-1 rounded-full text-black font-semibold"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
 
               <div className="mt-2 text-sm">{n.text}</div>
