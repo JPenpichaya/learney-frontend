@@ -983,38 +983,6 @@ export default function LessonVideoTracker({
                     </div>
                   </div>
 
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    <label className="text-xs text-white/70">
-                      Start (sec)
-                      <input
-                        className="mt-1 w-full rounded-xl bg-black/20 ring-1 ring-white/10 px-3 py-2 text-white"
-                        type="number"
-                        value={noteDraft.start}
-                        onChange={(e) =>
-                          setNoteDraft((d) => ({
-                            ...d,
-                            start: Number(e.target.value),
-                          }))
-                        }
-                      />
-                    </label>
-
-                    <label className="text-xs text-white/70">
-                      End (sec)
-                      <input
-                        className="mt-1 w-full rounded-xl bg-black/20 ring-1 ring-white/10 px-3 py-2 text-white"
-                        type="number"
-                        value={noteDraft.end}
-                        onChange={(e) =>
-                          setNoteDraft((d) => ({
-                            ...d,
-                            end: Number(e.target.value),
-                          }))
-                        }
-                      />
-                    </label>
-                  </div>
-
                   <label className="mt-3 block text-xs text-white/70">
                     Text
                     <textarea
@@ -1067,59 +1035,6 @@ export default function LessonVideoTracker({
                       </button>
                     )}
                   </div>
-                </div>
-
-                {/* list */}
-                <div className="space-y-3">
-                  {activeNotes.length === 0 ? (
-                    <div className="rounded-2xl bg-white/5 ring-1 ring-white/10 p-4 text-white/70">
-                      ยังไม่มีโน้ตของวิดีโอนี้
-                    </div>
-                  ) : (
-                    activeNotes.map((n) => (
-                      <div
-                        key={n.id}
-                        className="rounded-2xl bg-white/5 ring-1 ring-white/10 p-4"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="text-xs text-white/70">
-                            {formatTime(n.start)} - {formatTime(n.end)}
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              className="text-xs bg-white/10 hover:bg-white/15 px-3 py-1 rounded-full"
-                              onClick={() => beginEdit(n.videoId, n)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              className="text-xs bg-white/10 hover:bg-white/15 px-3 py-1 rounded-full"
-                              onClick={() => deleteNote(n.videoId, n.id)}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="mt-2 text-sm">{n.text}</div>
-
-                        {n.tags.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-1">
-                            {n.tags.map((t) => (
-                              <span
-                                key={t}
-                                className="text-[10px] px-2 py-1 rounded-full bg-white/10 text-white/80"
-                              >
-                                #{t}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
                 </div>
               </div>
             )}
