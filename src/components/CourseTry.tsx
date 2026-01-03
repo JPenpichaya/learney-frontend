@@ -39,8 +39,7 @@ type NoteItem = {
   id: string;
   videoId: string;
   lessonId: string;
-  start: number;
-  end: number;
+  time: number; // ✅ only timestamp
   text: string;
   tags: string[];
   createdAt: string;
@@ -148,7 +147,7 @@ function makeMockApiResponse(): LessonProgressApi[] {
           status: "COMPLETED",
           completedAt: 600,
           duration: 600,
-          url: "https://www.youtube.com/watch?v=_iIUGEOreiw&list=RD_iIUGEOreiw&start_radio=1",
+          url: "https://www.youtube.com/watch?v=_iIUGEOreiw",
           position: 1,
         },
         {
@@ -158,7 +157,7 @@ function makeMockApiResponse(): LessonProgressApi[] {
           status: "COMPLETED",
           completedAt: 300,
           duration: 300,
-          url: "https://www.youtube.com/watch?v=2C4xsP1xR0Q&list=RD2C4xsP1xR0Q&start_radio=1",
+          url: "https://www.youtube.com/watch?v=2C4xsP1xR0Q",
           position: 2,
         },
       ],
@@ -173,7 +172,7 @@ function makeMockApiResponse(): LessonProgressApi[] {
           status: "IN_PROGRESS",
           completedAt: 240,
           duration: 600,
-          url: "https://www.youtube.com/watch?v=p0JFc5giu9U&list=RDp0JFc5giu9U&start_radio=1",
+          url: "https://www.youtube.com/watch?v=p0JFc5giu9U",
           position: 1,
         },
         {
@@ -183,7 +182,7 @@ function makeMockApiResponse(): LessonProgressApi[] {
           status: "AVAILABLE",
           completedAt: 0,
           duration: 480,
-          url: "https://www.youtube.com/watch?v=p0JFc5giu9U&list=RDp0JFc5giu9U&start_radio=1",
+          url: "https://www.youtube.com/watch?v=p0JFc5giu9U",
           position: 2,
         },
         {
@@ -193,23 +192,8 @@ function makeMockApiResponse(): LessonProgressApi[] {
           status: "LOCKED",
           completedAt: 0,
           duration: 420,
-          url: "https://www.youtube.com/watch?v=p0JFc5giu9U&list=RDp0JFc5giu9U&start_radio=1",
+          url: "https://www.youtube.com/watch?v=p0JFc5giu9U",
           position: 3,
-        },
-      ],
-    },
-    {
-      lessonId: uuid(),
-      videoes: [
-        {
-          id: uuid(),
-          title: "Verb + ing",
-          description: "Gerund and present participle basics.",
-          status: "LOCKED",
-          completedAt: 0,
-          duration: 600,
-          url: "https://www.youtube.com/watch?v=p0JFc5giu9U&list=RDp0JFc5giu9U&start_radio=1",
-          position: 1,
         },
       ],
     },
@@ -277,22 +261,18 @@ function isProbablyYouTube(url: string) {
 
 function getYouTubeVideoId(url: string): string | null {
   try {
-    // youtu.be/VIDEOID
     const short = url.match(/youtu\.be\/([a-zA-Z0-9_-]{6,})/);
     if (short?.[1]) return short[1];
 
-    // youtube.com/watch?v=VIDEOID
     const u = new URL(url);
     const v = u.searchParams.get("v");
     if (v) return v;
 
-    // youtube.com/embed/VIDEOID
     const embed = url.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]{6,})/);
     if (embed?.[1]) return embed[1];
 
     return null;
   } catch {
-    // fallback regex
     const m = url.match(/[?&]v=([a-zA-Z0-9_-]{6,})/);
     return m?.[1] ?? null;
   }
@@ -311,13 +291,11 @@ function useYouTubeApiReady() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // already loaded
     if (window.YT && window.YT.Player) {
       setReady(true);
       return;
     }
 
-    // if script already exists, just wait for ready
     const existing = document.querySelector(
       'script[src="https://www.youtube.com/iframe_api"]'
     ) as HTMLScriptElement | null;
@@ -331,7 +309,6 @@ function useYouTubeApiReady() {
       document.head.appendChild(tag);
     }
 
-    // fallback poll (กันบางกรณี callback ไม่ยิง)
     const t = window.setInterval(() => {
       if (window.YT && window.YT.Player) {
         window.clearInterval(t);
@@ -517,12 +494,12 @@ export default function LessonVideoTracker({
     const v = flatVideos.find((x) => x.video.id === videoId)?.video;
     if (!v) return;
 
-    const completedAt = clamp(newCompletedAt, 0, v.duration);
+    const completedAt = clamp(newCompletedAt, 0, v.duration || newCompletedAt);
     let status: ProgressStatus = v.status;
 
     if (completedAt <= 0)
       status = v.status === "LOCKED" ? "LOCKED" : "AVAILABLE";
-    else if (completedAt >= v.duration) status = "COMPLETED";
+    else if (v.duration > 0 && completedAt >= v.duration) status = "COMPLETED";
     else status = "IN_PROGRESS";
 
     updateVideo(videoId, { completedAt, status });
@@ -544,10 +521,7 @@ export default function LessonVideoTracker({
       status: v.status === "LOCKED" ? "LOCKED" : "AVAILABLE",
     });
 
-    // reset player time too
-    if (activeVideoId === videoId) {
-      seekAny(0, false);
-    }
+    if (activeVideoId === videoId) seekAny(0, false);
   }
 
   function goNextVideo() {
@@ -588,12 +562,7 @@ export default function LessonVideoTracker({
     );
   }, [notesByVideo]);
 
-  const [noteDraft, setNoteDraft] = useState({
-    start: 0,
-    end: 10,
-    text: "",
-    tags: "",
-  });
+  const [noteDraft, setNoteDraft] = useState({ text: "", tags: "" });
 
   const [editing, setEditing] = useState<{
     videoId: string;
@@ -602,119 +571,8 @@ export default function LessonVideoTracker({
 
   useEffect(() => {
     setEditing(null);
-    setNoteDraft({ start: 0, end: 10, text: "", tags: "" });
+    setNoteDraft({ text: "", tags: "" });
   }, [activeVideoId]);
-
-  function addNote() {
-    if (!active || !activeVideoId) return;
-    const text = noteDraft.text.trim();
-    if (!text) return;
-
-    const start = clamp(Number(noteDraft.start) || 0, 0, active.video.duration);
-    const end = clamp(
-      Number(noteDraft.end) || start,
-      start,
-      active.video.duration
-    );
-    const tags = noteDraft.tags
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
-
-    const item: NoteItem = {
-      id: uid(),
-      videoId: activeVideoId,
-      lessonId: active.lessonId,
-      start,
-      end,
-      text,
-      tags,
-      createdAt: new Date().toISOString(),
-    };
-
-    setNotesByVideo((prev) => {
-      const next = { ...prev };
-      const arr = next[activeVideoId] ? [...next[activeVideoId]] : [];
-      arr.unshift(item);
-      next[activeVideoId] = arr;
-      return next;
-    });
-
-    setNoteDraft((d) => ({ ...d, text: "" }));
-  }
-
-  function deleteNote(videoId: string, noteId: string) {
-    setNotesByVideo((prev) => {
-      const next = { ...prev };
-      const arr = (next[videoId] ?? []).filter((n) => n.id !== noteId);
-      if (arr.length === 0) delete next[videoId];
-      else next[videoId] = arr;
-      return next;
-    });
-  }
-
-  function beginEdit(videoId: string, note: NoteItem) {
-    setEditing({ videoId, noteId: note.id });
-    setMode("note");
-    setNoteDraft({
-      start: note.start,
-      end: note.end,
-      text: note.text,
-      tags: note.tags.join(", "),
-    });
-  }
-
-  function saveEdit() {
-    if (!editing || !active) return;
-    const { videoId, noteId } = editing;
-    const text = noteDraft.text.trim();
-    if (!text) return;
-
-    const duration = active.video.duration;
-    const start = clamp(Number(noteDraft.start) || 0, 0, duration);
-    const end = clamp(Number(noteDraft.end) || start, start, duration);
-    const tags = noteDraft.tags
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
-
-    setNotesByVideo((prev) => {
-      const next = { ...prev };
-      const arr = [...(next[videoId] ?? [])];
-      const idx = arr.findIndex((n) => n.id === noteId);
-      if (idx >= 0) {
-        arr[idx] = {
-          ...arr[idx],
-          start,
-          end,
-          text,
-          tags,
-          updatedAt: new Date().toISOString(),
-        };
-        next[videoId] = arr;
-      }
-      return next;
-    });
-
-    setEditing(null);
-    setNoteDraft({ start: 0, end: 10, text: "", tags: "" });
-  }
-
-  function cancelEdit() {
-    setEditing(null);
-    setNoteDraft({ start: 0, end: 10, text: "", tags: "" });
-  }
-
-  const videoTitleMap = useMemo(() => {
-    const m = new Map<string, { lessonTitle: string; videoTitle: string }>();
-    flatVideos.forEach((x) =>
-      m.set(x.video.id, {
-        lessonTitle: x.lessonTitle,
-        videoTitle: x.video.title,
-      })
-    );
-    return m;
-  }, [flatVideos]);
 
   /* ===================== PLAYER (Hybrid: YouTube + HTML5) ===================== */
   const ytReady = useYouTubeApiReady();
@@ -727,9 +585,19 @@ export default function LessonVideoTracker({
     autoplay?: boolean;
   } | null>(null);
 
+  // ✅ ref กัน stale callback
+  const pendingSeekRef = useRef<{
+    videoId: string;
+    time: number;
+    autoplay?: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    pendingSeekRef.current = pendingSeek;
+  }, [pendingSeek]);
+
   const [pauseWhileTyping, setPauseWhileTyping] = useState(true);
 
-  // polling interval (youtube)
   const ytPollRef = useRef<number | null>(null);
   const lastTickRef = useRef(0);
 
@@ -769,13 +637,11 @@ export default function LessonVideoTracker({
     ytPlayerRef.current = null;
   }
 
-  // create/destroy youtube player when active changes
   useEffect(() => {
     if (!active) return;
 
     const isYT = isProbablyYouTube(active.video.url);
     if (!isYT) {
-      // switching to HTML5: destroy YT
       destroyYtPlayer();
       return;
     }
@@ -785,7 +651,6 @@ export default function LessonVideoTracker({
     const vid = getYouTubeVideoId(active.video.url);
     if (!vid) return;
 
-    // new mount id per video (so re-create correctly)
     const mountId = `yt-player-${active.video.id}`;
     const mount = document.getElementById(mountId);
     if (!mount) return;
@@ -801,37 +666,44 @@ export default function LessonVideoTracker({
       },
       events: {
         onReady: () => {
-          // sync to completedAt
           try {
             const dur = Number(ytPlayerRef.current.getDuration?.() ?? 0);
             const finalDur = dur > 0 ? dur : active.video.duration || 0;
+
             if (
               dur > 0 &&
               (!active.video.duration || active.video.duration <= 0)
             ) {
               updateVideo(active.video.id, { duration: Math.floor(dur) });
             }
-            const t = clamp(active.video.completedAt || 0, 0, finalDur);
-            ytPlayerRef.current.seekTo?.(t, true);
 
-            // apply pending seek if any
-            if (pendingSeek && pendingSeek.videoId === active.video.id) {
-              const tt = clamp(pendingSeek.time, 0, finalDur);
+            // sync base progress
+            const base = clamp(
+              active.video.completedAt || 0,
+              0,
+              finalDur || Number.MAX_SAFE_INTEGER
+            );
+            ytPlayerRef.current.seekTo?.(base, true);
+
+            // ✅ apply pending seek using REF (no stale)
+            const ps = pendingSeekRef.current;
+            if (ps && ps.videoId === active.video.id) {
+              const tt = clamp(ps.time, 0, finalDur || Number.MAX_SAFE_INTEGER);
               ytPlayerRef.current.seekTo?.(tt, true);
               setProgress(active.video.id, tt);
-              if (pendingSeek.autoplay) ytPlayerRef.current.playVideo?.();
+              if (ps.autoplay) ytPlayerRef.current.playVideo?.();
+
+              pendingSeekRef.current = null;
               setPendingSeek(null);
             }
           } catch {}
         },
         onStateChange: (e: any) => {
-          // YT.PlayerState: -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering
           const st = e?.data;
           if (st === 1) startYtPolling();
           if (st === 2) stopYtPolling();
           if (st === 0) {
             stopYtPolling();
-            // ended => complete
             markComplete(active.video.id);
           }
         },
@@ -839,13 +711,11 @@ export default function LessonVideoTracker({
     });
 
     return () => {
-      // destroy when unmount/active change
       destroyYtPlayer();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.video.id, ytReady]);
 
-  // HTML5 timeupdate
   function handleHtmlTimeUpdate() {
     if (!active || !htmlVideoRef.current) return;
 
@@ -878,17 +748,19 @@ export default function LessonVideoTracker({
       );
     } catch {}
 
-    if (pendingSeek && pendingSeek.videoId === active.video.id) {
+    // ✅ apply pending seek using REF (no stale)
+    const ps = pendingSeekRef.current;
+    if (ps && ps.videoId === active.video.id) {
       try {
-        const tt = clamp(
-          pendingSeek.time,
-          0,
-          active.video.duration || Math.floor(dur) || 0
-        );
+        const maxD =
+          active.video.duration || Math.floor(dur) || Number.MAX_SAFE_INTEGER;
+        const tt = clamp(ps.time, 0, maxD);
         el.currentTime = tt;
         setProgress(active.video.id, tt);
-        if (pendingSeek.autoplay) el.play().catch(() => {});
+        if (ps.autoplay) el.play().catch(() => {});
       } catch {}
+
+      pendingSeekRef.current = null;
       setPendingSeek(null);
     }
   }
@@ -898,7 +770,34 @@ export default function LessonVideoTracker({
     markComplete(active.video.id);
   }
 
-  // unified controls
+  function getNowTimeAny() {
+    if (!active) return 0;
+
+    if (isProbablyYouTube(active.video.url)) {
+      const t = Number(ytPlayerRef.current?.getCurrentTime?.() ?? NaN);
+      if (Number.isFinite(t)) return t;
+      return active.video.completedAt || 0;
+    }
+
+    const t = Number(htmlVideoRef.current?.currentTime ?? NaN);
+    if (Number.isFinite(t)) return t;
+    return active.video.completedAt || 0;
+  }
+
+  function getDurationAny() {
+    if (!active) return 0;
+
+    if (isProbablyYouTube(active.video.url)) {
+      const d = Number(ytPlayerRef.current?.getDuration?.() ?? NaN);
+      if (Number.isFinite(d) && d > 0) return d;
+      return active.video.duration || 0;
+    }
+
+    const d = Number(htmlVideoRef.current?.duration ?? NaN);
+    if (Number.isFinite(d) && d > 0) return d;
+    return active.video.duration || 0;
+  }
+
   function playAny() {
     if (!active || active.video.status === "LOCKED") return;
 
@@ -921,49 +820,170 @@ export default function LessonVideoTracker({
   function seekAny(time: number, autoplay = false) {
     if (!active) return;
 
-    const t = clamp(time, 0, active.video.duration || Number.MAX_SAFE_INTEGER);
+    const dur = getDurationAny();
+    const t = clamp(time, 0, dur > 0 ? dur : Number.MAX_SAFE_INTEGER);
 
     if (isProbablyYouTube(active.video.url)) {
-      // if player not ready yet => pending
       if (!ytPlayerRef.current?.seekTo) {
-        setPendingSeek({ videoId: active.video.id, time: t, autoplay });
+        const next = { videoId: active.video.id, time: t, autoplay };
+        pendingSeekRef.current = next;
+        setPendingSeek(next);
         return;
       }
+
       ytPlayerRef.current.seekTo(t, true);
       setProgress(active.video.id, t);
       if (autoplay) ytPlayerRef.current.playVideo?.();
       return;
     }
 
-    // html5
     const el = htmlVideoRef.current;
     if (!el) {
-      setPendingSeek({ videoId: active.video.id, time: t, autoplay });
+      const next = { videoId: active.video.id, time: t, autoplay };
+      pendingSeekRef.current = next;
+      setPendingSeek(next);
       return;
     }
+
     try {
       el.currentTime = t;
       setProgress(active.video.id, t);
       if (autoplay) el.play().catch(() => {});
     } catch {
-      setPendingSeek({ videoId: active.video.id, time: t, autoplay });
+      const next = { videoId: active.video.id, time: t, autoplay };
+      pendingSeekRef.current = next;
+      setPendingSeek(next);
     }
   }
 
   function jumpTo(videoId: string, time: number, autoplay = false) {
+    // ✅ ถ้าคลิปเดียวกัน => seek ทันที
+    if (activeVideoId === videoId) {
+      seekAny(time, autoplay);
+      return;
+    }
+
     setActiveVideoId(videoId);
     setMode("subject");
-    setPendingSeek({ videoId, time, autoplay });
+
+    const next = { videoId, time, autoplay };
+    pendingSeekRef.current = next; // ✅ กัน stale
+    setPendingSeek(next);
   }
 
-  // apply pending seek when active changes (works for both html5/yt)
+  // ✅ สำคัญ: apply pendingSeek หลัง active เปลี่ยน (กันกรณี player ยังไม่ ready ตอน setPendingSeek)
   useEffect(() => {
-    if (!active || !pendingSeek) return;
-    if (pendingSeek.videoId !== active.video.id) return;
-    // try immediately (if ready)
-    seekAny(pendingSeek.time, !!pendingSeek.autoplay);
+    if (!active) return;
+    const ps = pendingSeekRef.current;
+    if (!ps) return;
+    if (ps.videoId !== active.video.id) return;
+
+    seekAny(ps.time, !!ps.autoplay);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.video.id]);
+
+  /* ===================== Notes functions ===================== */
+  function addNote() {
+    if (!active || !activeVideoId) return;
+
+    const text = noteDraft.text.trim();
+    if (!text) return;
+
+    const duration = Math.max(0, getDurationAny());
+    const now = clamp(getNowTimeAny(), 0, duration || Number.MAX_SAFE_INTEGER);
+
+    const tags = noteDraft.tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+
+    const item: NoteItem = {
+      id: uid(),
+      videoId: activeVideoId,
+      lessonId: active.lessonId,
+      time: now, // ✅ save only timestamp
+      text,
+      tags,
+      createdAt: new Date().toISOString(),
+    };
+
+    setNotesByVideo((prev) => {
+      const next = { ...prev };
+      const arr = next[activeVideoId] ? [...next[activeVideoId]] : [];
+      arr.unshift(item);
+      next[activeVideoId] = arr;
+      return next;
+    });
+
+    setNoteDraft((d) => ({ ...d, text: "" }));
+  }
+
+  function deleteNote(videoId: string, noteId: string) {
+    setNotesByVideo((prev) => {
+      const next = { ...prev };
+      const arr = (next[videoId] ?? []).filter((n) => n.id !== noteId);
+      if (arr.length === 0) delete next[videoId];
+      else next[videoId] = arr;
+      return next;
+    });
+  }
+
+  function beginEdit(videoId: string, note: NoteItem) {
+    setEditing({ videoId, noteId: note.id });
+    setMode("note");
+    setNoteDraft({
+      text: note.text,
+      tags: note.tags.join(", "),
+    });
+  }
+
+  function saveEdit() {
+    if (!editing) return;
+    const { videoId, noteId } = editing;
+
+    const text = noteDraft.text.trim();
+    if (!text) return;
+
+    const tags = noteDraft.tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+
+    setNotesByVideo((prev) => {
+      const next = { ...prev };
+      const arr = [...(next[videoId] ?? [])];
+      const idx = arr.findIndex((n) => n.id === noteId);
+      if (idx >= 0) {
+        arr[idx] = {
+          ...arr[idx],
+          text,
+          tags,
+          updatedAt: new Date().toISOString(),
+        };
+        next[videoId] = arr;
+      }
+      return next;
+    });
+
+    setEditing(null);
+    setNoteDraft({ text: "", tags: "" });
+  }
+
+  function cancelEdit() {
+    setEditing(null);
+    setNoteDraft({ text: "", tags: "" });
+  }
+
+  const videoTitleMap = useMemo(() => {
+    const m = new Map<string, { lessonTitle: string; videoTitle: string }>();
+    flatVideos.forEach((x) =>
+      m.set(x.video.id, {
+        lessonTitle: x.lessonTitle,
+        videoTitle: x.video.title,
+      })
+    );
+    return m;
+  }, [flatVideos]);
 
   /* ===================== UI ===================== */
   return (
@@ -1012,7 +1032,6 @@ export default function LessonVideoTracker({
                 <div className="mt-6 rounded-2xl bg-black/25 ring-1 ring-white/10 overflow-hidden">
                   {isProbablyYouTube(active.video.url) ? (
                     <div className="w-full aspect-video bg-black">
-                      {/* mount node for YT player */}
                       <div
                         id={`yt-player-${active.video.id}`}
                         className="w-full h-full"
@@ -1148,7 +1167,7 @@ export default function LessonVideoTracker({
                   : "bg-white/10 text-white hover:bg-white/15",
               ].join(" ")}
             >
-              subject
+              Subject
             </button>
 
             <button
@@ -1203,7 +1222,7 @@ export default function LessonVideoTracker({
                   return (
                     <li
                       key={lesson.lessonId}
-                      className={`relative  pl-12 ${!isLast ? "pb-6" : ""}`}
+                      className={`relative pl-12 ${!isLast ? "pb-6" : ""}`}
                     >
                       {!isFirst && (
                         <div
@@ -1370,7 +1389,7 @@ export default function LessonVideoTracker({
                         setNoteDraft((d) => ({ ...d, text: e.target.value }))
                       }
                       onFocus={() => pauseWhileTyping && pauseAny()}
-                      placeholder="พิมพ์โน้ต..."
+                      placeholder="พิมพ์โน้ต... (จะบันทึกเวลาปัจจุบันให้อัตโนมัติ)"
                     />
                   </label>
 
@@ -1424,7 +1443,7 @@ export default function LessonVideoTracker({
               <AllNotesPanel
                 allNotes={allNotes}
                 videoTitleMap={videoTitleMap}
-                onJump={(videoId, t) => jumpTo(videoId, t, false)}
+                onJump={(videoId, t) => jumpTo(videoId, t, true)} // ✅ autoplay on jump
                 onDelete={(videoId, noteId) => deleteNote(videoId, noteId)}
               />
             )}
@@ -1495,14 +1514,14 @@ function AllNotesPanel(props: {
                     {meta?.videoTitle ?? "Video"}
                   </div>
                   <div className="mt-1 text-xs text-white/60">
-                    {formatTime(n.start)} - {formatTime(n.end)}
+                    ⏱ {formatTime(n.time)}
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
-                    onClick={() => onJump(n.videoId, n.start)}
+                    onClick={() => onJump(n.videoId, n.time)}
                     className="text-xs bg-white/10 hover:bg-white/15 px-3 py-1 rounded-full"
                   >
                     Jump
