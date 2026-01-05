@@ -579,22 +579,12 @@ export default function LessonVideoTracker({
   const ytPlayerRef = useRef<any>(null);
   const htmlVideoRef = useRef<HTMLVideoElement | null>(null);
 
-  const [pendingSeek, setPendingSeek] = useState<{
-    videoId: string;
-    time: number;
-    autoplay?: boolean;
-  } | null>(null);
-
-  // ✅ ref กัน stale callback
+  // ✅ ใช้ REF เป็นแหล่งจริง (กัน stale + กัน timing)
   const pendingSeekRef = useRef<{
     videoId: string;
     time: number;
     autoplay?: boolean;
   } | null>(null);
-
-  useEffect(() => {
-    pendingSeekRef.current = pendingSeek;
-  }, [pendingSeek]);
 
   const [pauseWhileTyping, setPauseWhileTyping] = useState(true);
 
@@ -637,85 +627,6 @@ export default function LessonVideoTracker({
     ytPlayerRef.current = null;
   }
 
-  useEffect(() => {
-    if (!active) return;
-
-    const isYT = isProbablyYouTube(active.video.url);
-    if (!isYT) {
-      destroyYtPlayer();
-      return;
-    }
-
-    if (!ytReady) return;
-
-    const vid = getYouTubeVideoId(active.video.url);
-    if (!vid) return;
-
-    const mountId = `yt-player-${active.video.id}`;
-    const mount = document.getElementById(mountId);
-    if (!mount) return;
-
-    destroyYtPlayer();
-
-    ytPlayerRef.current = new window.YT.Player(mountId, {
-      videoId: vid,
-      playerVars: {
-        rel: 0,
-        modestbranding: 1,
-        playsinline: 1,
-      },
-      events: {
-        onReady: () => {
-          try {
-            const dur = Number(ytPlayerRef.current.getDuration?.() ?? 0);
-            const finalDur = dur > 0 ? dur : active.video.duration || 0;
-
-            if (
-              dur > 0 &&
-              (!active.video.duration || active.video.duration <= 0)
-            ) {
-              updateVideo(active.video.id, { duration: Math.floor(dur) });
-            }
-
-            // sync base progress
-            const base = clamp(
-              active.video.completedAt || 0,
-              0,
-              finalDur || Number.MAX_SAFE_INTEGER
-            );
-            ytPlayerRef.current.seekTo?.(base, true);
-
-            // ✅ apply pending seek using REF (no stale)
-            const ps = pendingSeekRef.current;
-            if (ps && ps.videoId === active.video.id) {
-              const tt = clamp(ps.time, 0, finalDur || Number.MAX_SAFE_INTEGER);
-              ytPlayerRef.current.seekTo?.(tt, true);
-              setProgress(active.video.id, tt);
-              if (ps.autoplay) ytPlayerRef.current.playVideo?.();
-
-              pendingSeekRef.current = null;
-              setPendingSeek(null);
-            }
-          } catch {}
-        },
-        onStateChange: (e: any) => {
-          const st = e?.data;
-          if (st === 1) startYtPolling();
-          if (st === 2) stopYtPolling();
-          if (st === 0) {
-            stopYtPolling();
-            markComplete(active.video.id);
-          }
-        },
-      },
-    });
-
-    return () => {
-      destroyYtPlayer();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active?.video.id, ytReady]);
-
   function handleHtmlTimeUpdate() {
     if (!active || !htmlVideoRef.current) return;
 
@@ -740,15 +651,7 @@ export default function LessonVideoTracker({
       updateVideo(active.video.id, { duration: Math.floor(dur) });
     }
 
-    try {
-      el.currentTime = clamp(
-        active.video.completedAt || 0,
-        0,
-        active.video.duration || Math.floor(dur) || 0
-      );
-    } catch {}
-
-    // ✅ apply pending seek using REF (no stale)
+    // ✅ apply pending ก่อน (ถ้ามี) แล้ว return เลย กัน base ไปทับ
     const ps = pendingSeekRef.current;
     if (ps && ps.videoId === active.video.id) {
       try {
@@ -761,8 +664,17 @@ export default function LessonVideoTracker({
       } catch {}
 
       pendingSeekRef.current = null;
-      setPendingSeek(null);
+      return;
     }
+
+    // ไม่มี pending ค่อย sync base
+    try {
+      el.currentTime = clamp(
+        active.video.completedAt || 0,
+        0,
+        active.video.duration || Math.floor(dur) || 0
+      );
+    } catch {}
   }
 
   function handleHtmlEnded() {
@@ -824,24 +736,26 @@ export default function LessonVideoTracker({
     const t = clamp(time, 0, dur > 0 ? dur : Number.MAX_SAFE_INTEGER);
 
     if (isProbablyYouTube(active.video.url)) {
+      // ถ้า player ยังไม่พร้อม -> เก็บ pending ไว้
       if (!ytPlayerRef.current?.seekTo) {
-        const next = { videoId: active.video.id, time: t, autoplay };
-        pendingSeekRef.current = next;
-        setPendingSeek(next);
+        pendingSeekRef.current = {
+          videoId: active.video.id,
+          time: t,
+          autoplay,
+        };
         return;
       }
 
       ytPlayerRef.current.seekTo(t, true);
       setProgress(active.video.id, t);
       if (autoplay) ytPlayerRef.current.playVideo?.();
+      else ytPlayerRef.current.pauseVideo?.();
       return;
     }
 
     const el = htmlVideoRef.current;
     if (!el) {
-      const next = { videoId: active.video.id, time: t, autoplay };
-      pendingSeekRef.current = next;
-      setPendingSeek(next);
+      pendingSeekRef.current = { videoId: active.video.id, time: t, autoplay };
       return;
     }
 
@@ -850,37 +764,130 @@ export default function LessonVideoTracker({
       setProgress(active.video.id, t);
       if (autoplay) el.play().catch(() => {});
     } catch {
-      const next = { videoId: active.video.id, time: t, autoplay };
-      pendingSeekRef.current = next;
-      setPendingSeek(next);
+      pendingSeekRef.current = { videoId: active.video.id, time: t, autoplay };
     }
   }
 
+  // ✅ สร้าง YT player เมื่อ active เป็น youtube
+  useEffect(() => {
+    if (!active) return;
+
+    const isYT = isProbablyYouTube(active.video.url);
+    if (!isYT) {
+      destroyYtPlayer();
+      return;
+    }
+
+    if (!ytReady) return;
+
+    const vid = getYouTubeVideoId(active.video.url);
+    if (!vid) return;
+
+    const mountId = `yt-player-${active.video.id}`;
+    const mount = document.getElementById(mountId);
+    if (!mount) return;
+
+    destroyYtPlayer();
+
+    ytPlayerRef.current = new window.YT.Player(mountId, {
+      videoId: vid,
+      playerVars: {
+        rel: 0,
+        modestbranding: 1,
+        playsinline: 1,
+      },
+      events: {
+        onReady: () => {
+          try {
+            const dur = Number(ytPlayerRef.current.getDuration?.() ?? 0);
+
+            if (
+              dur > 0 &&
+              (!active.video.duration || active.video.duration <= 0)
+            ) {
+              updateVideo(active.video.id, { duration: Math.floor(dur) });
+            }
+
+            // ✅ 1) ถ้ามี pending ของคลิปนี้ -> apply ก่อน
+            const ps = pendingSeekRef.current;
+            if (ps && ps.videoId === active.video.id) {
+              const tt = clamp(
+                ps.time,
+                0,
+                dur > 0 ? dur : Number.MAX_SAFE_INTEGER
+              );
+              ytPlayerRef.current.seekTo?.(tt, true);
+              setProgress(active.video.id, tt);
+              if (ps.autoplay) ytPlayerRef.current.playVideo?.();
+              else ytPlayerRef.current.pauseVideo?.();
+
+              pendingSeekRef.current = null;
+              return;
+            }
+
+            // ✅ 2) ถ้าไม่มี pending -> sync base progress
+            const base = clamp(
+              active.video.completedAt || 0,
+              0,
+              dur > 0 ? dur : Number.MAX_SAFE_INTEGER
+            );
+            ytPlayerRef.current.seekTo?.(base, true);
+          } catch {}
+        },
+
+        onStateChange: (e: any) => {
+          const st = e?.data;
+
+          // ✅ กัน YT งอแง: ถ้า CUED(5) หรือ PLAYING(1) แล้วยังมี pending -> apply ซ้ำ
+          if (
+            (st === 5 || st === 1) &&
+            pendingSeekRef.current?.videoId === active.video.id
+          ) {
+            try {
+              const dur = Number(ytPlayerRef.current.getDuration?.() ?? 0);
+              const ps = pendingSeekRef.current!;
+              const tt = clamp(
+                ps.time,
+                0,
+                dur > 0 ? dur : Number.MAX_SAFE_INTEGER
+              );
+
+              ytPlayerRef.current.seekTo?.(tt, true);
+              setProgress(active.video.id, tt);
+              if (ps.autoplay) ytPlayerRef.current.playVideo?.();
+              else ytPlayerRef.current.pauseVideo?.();
+
+              pendingSeekRef.current = null;
+            } catch {}
+          }
+
+          if (st === 1) startYtPolling();
+          if (st === 2) stopYtPolling();
+          if (st === 0) {
+            stopYtPolling();
+            markComplete(active.video.id);
+          }
+        },
+      },
+    });
+
+    return () => {
+      destroyYtPlayer();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active?.video.id, ytReady]);
+
+  // ✅ Jump: ตั้ง pending ก่อน แล้วค่อยเปลี่ยน active (ให้ player apply ตอน ready)
   function jumpTo(videoId: string, time: number, autoplay = false) {
-    // ✅ ถ้าคลิปเดียวกัน => seek ทันที
     if (activeVideoId === videoId) {
       seekAny(time, autoplay);
       return;
     }
 
+    pendingSeekRef.current = { videoId, time, autoplay };
     setActiveVideoId(videoId);
     setMode("subject");
-
-    const next = { videoId, time, autoplay };
-    pendingSeekRef.current = next; // ✅ กัน stale
-    setPendingSeek(next);
   }
-
-  // ✅ สำคัญ: apply pendingSeek หลัง active เปลี่ยน (กันกรณี player ยังไม่ ready ตอน setPendingSeek)
-  useEffect(() => {
-    if (!active) return;
-    const ps = pendingSeekRef.current;
-    if (!ps) return;
-    if (ps.videoId !== active.video.id) return;
-
-    seekAny(ps.time, !!ps.autoplay);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active?.video.id]);
 
   /* ===================== Notes functions ===================== */
   function addNote() {
@@ -901,7 +908,7 @@ export default function LessonVideoTracker({
       id: uid(),
       videoId: activeVideoId,
       lessonId: active.lessonId,
-      time: now, // ✅ save only timestamp
+      time: now,
       text,
       tags,
       createdAt: new Date().toISOString(),
@@ -1443,7 +1450,7 @@ export default function LessonVideoTracker({
               <AllNotesPanel
                 allNotes={allNotes}
                 videoTitleMap={videoTitleMap}
-                onJump={(videoId, t) => jumpTo(videoId, t, true)} // ✅ autoplay on jump
+                onJump={(videoId, t) => jumpTo(videoId, t, true)}
                 onDelete={(videoId, noteId) => deleteNote(videoId, noteId)}
               />
             )}
