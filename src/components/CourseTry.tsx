@@ -133,17 +133,15 @@ function getLessonSegments(videos: VideoProgress[]): ProgressStatus[] {
   const hasAvailable = raw.includes("AVAILABLE");
 
   // RULE: มี IN_PROGRESS และ "ไม่มี AVAILABLE" => IN_PROGRESS ทั้งเส้น
-  // ex: COMPLETED & IN_PROGRESS & IN_PROGRESS => IN_PROGRESS ทั้งเส้น
   if (hasInProgress && !hasAvailable) return raw.map(() => "IN_PROGRESS");
 
   // RULE: มี IN_PROGRESS และมี AVAILABLE => ก่อน AVAILABLE ตัวแรก เป็น IN_PROGRESS
-  // ex: COMPLETED & IN_PROGRESS & AVAILABLE => IN_PROGRESS IN_PROGRESS AVAILABLE
   if (hasInProgress && hasAvailable) {
     const firstAvailIdx = raw.findIndex((s) => s === "AVAILABLE");
     return raw.map((s, i) => (i < firstAvailIdx ? "IN_PROGRESS" : s));
   }
 
-  // อื่น ๆ (เช่น COMPLETED ล้วน / ผสมแบบไม่มี IN_PROGRESS) => ตามสถานะจริง
+  // อื่น ๆ => ตามสถานะจริง
   return raw;
 }
 
@@ -841,7 +839,7 @@ export default function LessonVideoTracker({
 
     destroyYtPlayer();
 
-    ytPlayerRef.current = new window.YT.Player(mountId, {
+    ytPlayerRef.current = new (window as any).YT.Player(mountId, {
       videoId: vid,
       playerVars: {
         rel: 0,
@@ -1012,7 +1010,7 @@ export default function LessonVideoTracker({
           className="mx-auto max-w-6xl px-4"
           style={{ paddingTop: TOP_OFFSET + 24 }}
         >
-          <section className="rounded-2xl bg-white/5 p-6 shadow-xl ring-1 ring-white/10">
+          <section className="rounded-2xl  p-6  ">
             {active ? (
               <>
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1023,9 +1021,6 @@ export default function LessonVideoTracker({
                     <h3 className="truncate text-xl font-semibold">
                       {active.video.title}
                     </h3>
-                    <p className="mt-2 text-sm text-white/75">
-                      {active.video.description}
-                    </p>
                   </div>
 
                   <span
@@ -1063,65 +1058,13 @@ export default function LessonVideoTracker({
                     />
                   )}
 
-                  <div className="p-4">
+                  <div className="p-4 hidden ">
                     <div className="flex items-center justify-between text-sm text-white/80">
                       <span>Time</span>
                       <span>
                         {formatTime(active.video.completedAt)} /{" "}
                         {formatTime(active.video.duration)}
                       </span>
-                    </div>
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={playAny}
-                        className="rounded-full bg-sky-400 px-4 py-2 text-sm font-semibold text-black hover:brightness-95"
-                        disabled={active.video.status === "LOCKED"}
-                      >
-                        Play
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={pauseAny}
-                        className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15"
-                        disabled={active.video.status === "LOCKED"}
-                      >
-                        Pause
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => markComplete(active.video.id)}
-                        className="rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-black hover:brightness-95"
-                        disabled={active.video.status === "LOCKED"}
-                      >
-                        Mark Complete
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => resetVideo(active.video.id)}
-                        className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15"
-                        disabled={active.video.status === "LOCKED"}
-                      >
-                        Reset
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          window.open(
-                            active.video.url,
-                            "_blank",
-                            "noopener,noreferrer"
-                          )
-                        }
-                        className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15"
-                      >
-                        Open
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -1228,25 +1171,32 @@ export default function LessonVideoTracker({
                   const isExpanded = expandedLessonIds.has(lesson.lessonId);
                   const segments = getLessonSegments(lesson.videos);
 
+                  // ✅ NEW: ถ้า lesson สุดท้าย และกด Hide -> ซ่อนเส้นแนวตั้งด้วย
+                  const hideOuterLine = isLast && !isExpanded;
+
                   return (
                     <li
                       key={lesson.lessonId}
                       className={`relative pl-12 ${!isLast ? "pb-6" : ""}`}
                     >
                       {/* ✅ เส้นด้านนอกสุด: แบ่งท่อนตามจำนวนวิดีโอ */}
-                      <div
-                        className="absolute left-[12px] top-0 bottom-0 w-1 rounded-full overflow-hidden z-0 bg-white/10"
-                        aria-hidden="true"
-                      >
-                        <div className="h-full w-full flex flex-col">
-                          {segments.map((st, i) => (
-                            <div
-                              key={`${lesson.lessonId}-seg-${i}`}
-                              className={`flex-1 w-full ${outerLineColor(st)}`}
-                            />
-                          ))}
+                      {!hideOuterLine && (
+                        <div
+                          className="absolute left-[12px] top-0 bottom-0 w-1 rounded-full overflow-hidden z-0 bg-white/10"
+                          aria-hidden="true"
+                        >
+                          <div className="h-full w-full flex flex-col">
+                            {segments.map((st, i) => (
+                              <div
+                                key={`${lesson.lessonId}-seg-${i}`}
+                                className={`flex-1 w-full ${outerLineColor(
+                                  st
+                                )}`}
+                              />
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      )}
 
                       {/* lesson node */}
                       <div
@@ -1281,7 +1231,7 @@ export default function LessonVideoTracker({
 
                       {isExpanded && (
                         <div className="mt-4 space-y-4 ml-0">
-                          {/* ✅ ไม่มีเส้นในรายการวิดีโอแล้ว (ตามที่ต้องการ) */}
+                          {/* ✅ ไม่มีเส้นในรายการวิดีโอแล้ว */}
                           {lesson.videos.map((v) => {
                             const isActive = v.id === activeVideoId;
                             const disabled = v.status === "LOCKED";
@@ -1411,6 +1361,18 @@ export default function LessonVideoTracker({
                       }
                       onFocus={() => pauseWhileTyping && pauseAny()}
                       placeholder="พิมพ์โน้ต... "
+                    />
+                  </label>
+
+                  <label className="mt-3 block text-xs text-white/70">
+                    Tags (comma separated)
+                    <input
+                      className="mt-1 w-full rounded-xl bg-black/20 ring-1 ring-white/10 px-3 py-2 text-white"
+                      value={noteDraft.tags}
+                      onChange={(e) =>
+                        setNoteDraft((d) => ({ ...d, tags: e.target.value }))
+                      }
+                      placeholder="grammar, verb, example"
                     />
                   </label>
 
