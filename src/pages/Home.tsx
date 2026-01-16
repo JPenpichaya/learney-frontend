@@ -246,14 +246,26 @@ function Coures() {
           <div className="flex w-full  h-[120px] text-base xl:text-xl items-center font-medium z-40">
             <div className="flex-[0.8] flex pl-20 font-bold"></div>
             <div className="flex-1 flex justify-center">
-              <button className="px-10 py-4 \ rounded-full align-middle flex bg-[#2B32A3]/30 font-bold">
-                <p className="text-center h-full w-full mt-1">ซื้อพื้นฐาน</p>
-              </button>
+              <a href="https://music.youtube.com/" className="">
+                <button
+                  type="button"
+                  className="z-80 px-10 py-4 \ rounded-full align-middle flex bg-[#2B32A3]/30 font-bold"
+                >
+                  <p className="text-center h-full w-full mt-1">ซื้อพื้นฐาน</p>
+                </button>
+              </a>
             </div>
             <div className="flex-1 flex justify-center">
-              <button className="px-10 py-4 rounded-full align-middle flex font-bold bg-gradient-to-r from-[#464B9F] via-[#EA688E] to-[#F1F069]">
-                <p className="text-center h-full w-full mt-1">ซื้อพรีเมี่ยม</p>
-              </button>
+              <a href="https://music.youtube.com/" className="">
+                <button
+                  type="button"
+                  className="z-80 px-10 py-4 rounded-full align-middle flex font-bold bg-gradient-to-r from-[#464B9F] via-[#EA688E] to-[#F1F069]"
+                >
+                  <p className="text-center h-full w-full mt-1">
+                    ซื้อพรีเมี่ยม
+                  </p>
+                </button>
+              </a>
             </div>
           </div>
           {/* Button */}
