@@ -69,7 +69,3 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
-
-button:hover {
-  border-color: #646cff;
-}

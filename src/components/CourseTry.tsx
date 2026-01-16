@@ -1100,10 +1100,10 @@ export default function LessonVideoTracker({
           <button
             type="button"
             onClick={() => setPanelOpen((v) => !v)}
-            className="absolute -left-14 top-6 h-14 w-14 rounded-l-2xl bg-pink-300/90 text-black grid place-items-center shadow-lg"
+            className="absolute -left-10 top-15 h-12 w-10 rounded-l-2xl bg-pink-300/90 text-black grid place-items-center shadow-lg"
             aria-label="Toggle progress panel"
           >
-            <span className="text-4xl leading-none">
+            <span className="text-3xl ml-2 mt-0.5 leading-none">
               {panelOpen ? ">" : "<"}
             </span>
           </button>
