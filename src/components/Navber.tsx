@@ -45,7 +45,10 @@ export default function Menubar() {
         {/* เมนูเดสก์ท็อป */}
         <nav className="hidden lg:flex items-center justify-end mr-8">
           <ul className="flex items-center space-x-6 font-light">
-            <Link to="/call" className="hover:text-[#EA688E] transition-colors">
+            <Link
+              to="/InfoCourse"
+              className="hover:text-[#EA688E] transition-colors"
+            >
               <li className="ibm-plex-sans-thai-light">
                 {lang === "TH" ? "คอร์สเรียน" : "Courses"}
               </li>
@@ -121,8 +124,9 @@ export default function Menubar() {
         id="side-menu"
         role="dialog"
         aria-modal="true"
-        className={`fixed top-0 right-0 w-[250px] h-full shadow-lg transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"
-          } bg-white z-90 overflow-hidden lg:hidden`}
+        className={`fixed top-0 right-0 w-[250px] h-full shadow-lg transition-transform duration-300 ease-in-out ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        } bg-white z-90 overflow-hidden lg:hidden`}
       >
         <nav className="w-full pt-14 pb-8 text-sm">
           <ul className="list-none relative">
