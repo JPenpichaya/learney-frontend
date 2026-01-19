@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../lib/firebase";
 import { getIdToken, onAuthStateChanged } from "firebase/auth";
-import type { CoursePageUser, CoursePageResponse } from "../types/course";
+import type { CoursePageResponse, CoursePageUser } from "../type/CourseType.ts";
 
 const API_BASE = import.meta.env.VITE_API_BASE;
 
