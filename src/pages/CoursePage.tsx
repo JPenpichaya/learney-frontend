@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../lib/firebase";
 import { getIdToken, onAuthStateChanged } from "firebase/auth";
-import type { CoursePageUser, CoursePageResponse } from "../type/types";
 
 const API_BASE = import.meta.env.VITE_API_BASE as string;
 
@@ -382,7 +381,7 @@ export default function CoursesPage() {
 
       {/* 🧩 Course Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {courses?.content?.map((c) => (
+        {courses?.content?.map((c: any) => (
           <div
             key={c.id}
             className="bg-white rounded-3xl p-5 border shadow-sm flex flex-col h-full text-black"
