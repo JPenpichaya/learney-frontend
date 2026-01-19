@@ -246,7 +246,7 @@ function Coures() {
           <div className="flex w-full  h-[120px] text-base xl:text-xl items-center font-medium z-40">
             <div className="flex-[0.8] flex pl-20 font-bold"></div>
             <div className="flex-1 flex justify-center">
-              <a href="/InfoCourse" className="">
+              <a href="/CoursesPage" className="">
                 <button
                   type="button"
                   className="z-80 px-10 py-4 \ rounded-full align-middle flex bg-[#2B32A3]/30 font-bold"
@@ -256,7 +256,7 @@ function Coures() {
               </a>
             </div>
             <div className="flex-1 flex justify-center">
-              <a href="/InfoCourse" className="">
+              <a href="/CoursesPage" className="">
                 <button
                   type="button"
                   className="z-80 px-10 py-4 rounded-full align-middle flex font-bold bg-gradient-to-r from-[#464B9F] via-[#EA688E] to-[#F1F069]"
