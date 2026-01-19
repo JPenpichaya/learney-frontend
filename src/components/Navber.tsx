@@ -154,7 +154,7 @@ export default function Menubar() {
               </li>
             </Link>
 
-            <Link to="/call" {...linkProps}>
+            <Link to="/coursesPage" {...linkProps}>
               <li className="mb-[3px] h-[60px] bg-[#F4DADA] hover:bg-[url('/img/Star.gif')] hover:text-white flex items-center text-black">
                 <p className="px-4 font-medium">
                   {lang === "TH" ? "เกี่ยวกับเรา" : "About Us"}
@@ -162,7 +162,7 @@ export default function Menubar() {
               </li>
             </Link>
 
-            <Link to="/call" {...linkProps}>
+            <Link to="/coursesPage" {...linkProps}>
               <li className="mb-[3px] h-[60px] bg-[#FFB6B9] hover:bg-[url('/img/Star.gif')] hover:text-white flex items-center text-black">
                 <p className="px-4 font-medium">
                   {lang === "TH" ? "ติดต่อเรา" : "Contact"}
