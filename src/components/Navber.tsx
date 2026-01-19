@@ -26,7 +26,7 @@ export default function Menubar() {
       <header className="fixed text-black top-0 left-0 w-full h-14.5 lg:h-16 flex items-center border-b-[3px] border-[#EA688E] bg-white z-40">
         {/* โลโก้ */}
         <div className="ml-2 lg:ml-4 flex-1 flex items-center">
-          <Link to="/" className="hover:text-[#EA688E] transition-colors">
+          <a href="/#Home" className="hover:text-[#EA688E] transition-colors">
             {/* โลโก้ยาวสำหรับจอใหญ่ */}
             <img
               src="/img/Logo/(Long)Learney-Journey_logo.png"
@@ -39,38 +39,46 @@ export default function Menubar() {
               alt="Learney Journey Logo"
               className="lg:hidden h-full max-h-12 object-contain"
             />
-          </Link>
+          </a>
         </div>
 
         {/* เมนูเดสก์ท็อป */}
         <nav className="hidden lg:flex items-center justify-end mr-8">
           <ul className="flex items-center space-x-6 font-light">
-            <Link
-              to="/InfoCourse"
+            <a
+              href="/#Courespackage"
               className="hover:text-[#EA688E] transition-colors"
             >
               <li className="ibm-plex-sans-thai-light">
                 {lang === "TH" ? "คอร์สเรียน" : "Courses"}
               </li>
-            </Link>
-            <Link
-              to="/courses"
+            </a>
+
+            <a
+              href="/#Reviews"
               className="hover:text-[#EA688E] transition-colors"
             >
               <li className="ibm-plex-sans-thai-light">
-                {lang === "TH" ? "Test" : "Test"}
+                {lang === "TH" ? "รีวิว" : "Reviews"}
               </li>
-            </Link>
-            <Link to="/call" className="hover:text-[#EA688E] transition-colors">
+            </a>
+
+            <a
+              href="/#AboutUs"
+              className="hover:text-[#EA688E] transition-colors"
+            >
               <li className="ibm-plex-sans-thai-light">
                 {lang === "TH" ? "เกี่ยวกับเรา" : "About Us"}
               </li>
-            </Link>
-            <Link to="/call" className="hover:text-[#EA688E] transition-colors">
+            </a>
+            <a
+              href="/#Contact"
+              className="hover:text-[#EA688E] transition-colors"
+            >
               <li className="ibm-plex-sans-thai-light">
                 {lang === "TH" ? "ติดต่อเรา" : "Contact"}
               </li>
-            </Link>
+            </a>
             <Link
               to="/Login"
               className="hover:text-[#EA688E] transition-colors"
