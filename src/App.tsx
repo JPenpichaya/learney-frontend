@@ -8,6 +8,11 @@ import Menubar from "./components/Navber.tsx";
 import "./index.css";
 import "./App.css";
 import LessonVideoTracker from "./components/CourseTry.tsx";
+import InfoCourse from "./components/InfoCourse.tsx";
+import CoursesPage from "./pages/CoursePage.tsx";
+import SuccessfullyBuy from "./components/successfully.tsx";
+import ErorrPage from "./components/ErorrPage.tsx";
+import Coures from "./pages/Home.tsx";
 
 export default function App() {
   return (
@@ -20,15 +25,20 @@ export default function App() {
         <main className="ibm-plex-sans-thai-light">
           <Routes>
             {/* หน้า Home */}
-            <Route path="/" element={<Mainpage />} />
+            <Route path="/" element={<Login />} />
 
             {/* หน้า Login */}
             <Route path="/login" element={<Login />} />
-
+            <Route path="/Mainpage" element={<Mainpage />} />
+            <Route path="/CoursesPage" element={<CoursesPage />} />
+            <Route path="/InfoCourse" element={<InfoCourse />} />
+            <Route path="/SuccessfullyBuy" element={<SuccessfullyBuy />} />
+            <Route path="/ErorrPage" element={<ErorrPage />} />
+            <Route path="/CouresNavbar" element={<Coures />} />
             {/* คอร์สเรียน */}
             <Route path="/call" element={<CallPage identity="anonymous" />} />
             {/* <Route path="/reviews" element={<VideoSection />} /> */}
-            <Route path="/courses" element={<LessonVideoTracker useMock />} />
+            <Route path="/courses" element={<LessonVideoTracker />} />
 
             {/* 404 */}
             <Route path="*" element={<Navigate to="/" replace />} />

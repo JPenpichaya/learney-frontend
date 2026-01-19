@@ -45,7 +45,10 @@ function Intro() {
 
 function Detail() {
   return (
-    <div className="w-screen min-h-screen p-10 pt-20 flex flex-col">
+    <div
+      className="w-screen min-h-screen p-10 pt-30 flex flex-col"
+      id="AboutUs"
+    >
       <h1 className="lg:text-3xl lg:font-bold xl:Head1 text-center text-[#FBB1A9] mb-10">
         จุดเด่นของเรา
       </h1>
@@ -130,8 +133,11 @@ function Detail() {
 
 function Coures() {
   return (
-    <div className="w-screen min-h-screen p-10 pt-20 flex flex-col">
-      <h1 className="lg:text-3xl lg:font-bold xl:Head1 text-center text-[#FBB1A9] mb-20">
+    <div
+      className="w-screen min-h-screen p-10 pt-30 flex flex-col"
+      id="Courespackage"
+    >
+      <h1 className="lg:text-3xl lg:font-bold xl:Head1 text-center text-[#FBB1A9] mb-10">
         คอร์สเรียน
       </h1>
       <div className="flex flex-col w-full px-10 xl:px-30  items-center  space-y-10">
@@ -246,14 +252,26 @@ function Coures() {
           <div className="flex w-full  h-[120px] text-base xl:text-xl items-center font-medium z-40">
             <div className="flex-[0.8] flex pl-20 font-bold"></div>
             <div className="flex-1 flex justify-center">
-              <button className="px-10 py-4 \ rounded-full align-middle flex bg-[#2B32A3]/30 font-bold">
-                <p className="text-center h-full w-full mt-1">ซื้อพื้นฐาน</p>
-              </button>
+              <a href="/CoursesPage" className="">
+                <button
+                  type="button"
+                  className="z-80 px-10 py-4 \ rounded-full align-middle flex bg-[#2B32A3]/30 font-bold"
+                >
+                  <p className="text-center h-full w-full mt-1">ซื้อพื้นฐาน</p>
+                </button>
+              </a>
             </div>
             <div className="flex-1 flex justify-center">
-              <button className="px-10 py-4 rounded-full align-middle flex font-bold bg-gradient-to-r from-[#464B9F] via-[#EA688E] to-[#F1F069]">
-                <p className="text-center h-full w-full mt-1">ซื้อพรีเมี่ยม</p>
-              </button>
+              <a href="/CoursesPage" className="">
+                <button
+                  type="button"
+                  className="z-80 px-10 py-4 rounded-full align-middle flex font-bold bg-gradient-to-r from-[#464B9F] via-[#EA688E] to-[#F1F069]"
+                >
+                  <p className="text-center h-full w-full mt-1">
+                    ซื้อพรีเมี่ยม
+                  </p>
+                </button>
+              </a>
             </div>
           </div>
           {/* Button */}
@@ -460,12 +478,18 @@ const Testimonials = () => {
 
 function ReviewsContract() {
   return (
-    <div className="max-w-screen min-w-full min-h-full flex flex-col pt-20">
+    <div
+      className="max-w-screen min-w-full min-h-full flex flex-col pt-20"
+      id="Reviews"
+    >
       <h1 className="lg:text-3xl lg:font-bold xl:Head1 text-center text-[#FBB1A9] mb-2">
         REVIEW รีวิว
       </h1>
       <Testimonials />
-      <div className="bg-[#282341] w-full h-85 flex flex-col px-10">
+      <div
+        className="bg-[#282341] w-full h-85 flex flex-col px-10"
+        id="Contact"
+      >
         <div className="flex-1 flex w-full min-h-[90%]">
           <div className="flex-[0.8] pt-5 flex flex-col justify-center items-center">
             <img
@@ -552,7 +576,10 @@ function ReviewsContract() {
 
 function Home() {
   return (
-    <div className="max-w-screen w-full min-h-screen bg-cover bg-bottom bg-[url('/img/imgHome/Bg-home.svg')]">
+    <div
+      className="max-w-screen w-full min-h-screen bg-cover bg-bottom bg-[url('/img/imgHome/Bg-home.svg')]"
+      id="Home"
+    >
       <div className="z-20 max-w-screen min-h-screen bg-gradient-to-b from-transparent to-[#070D2D]/89">
         <div className="z-30 w-full min-h-screen h-full flex flex-col justify-center content-center items-center text-center">
           <h1 className="text-6xl font-semibold gradient-text">

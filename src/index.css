@@ -16,7 +16,18 @@
 
 /* ซ่อน scrollbar สำหรับทุก browser */
 
+.hide-scrollbar {
+  overflow: auto;
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE & Edge */
+}
 
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari */
+}
 
 .ibm-plex-sans-thai-thin {
   font-family: "IBM Plex Sans Thai", sans-serif;
@@ -68,8 +79,4 @@
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
-}
-
-button:hover {
-  border-color: #646cff;
 }
