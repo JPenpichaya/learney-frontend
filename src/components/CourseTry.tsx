@@ -1,63 +1,57 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+// InfoCourse.tsx
+import React, { useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 /* ===================== TYPES ===================== */
 type ProgressStatus = "LOCKED" | "AVAILABLE" | "IN_PROGRESS" | "COMPLETED";
-type Mode = "subject" | "note" | "all";
-type DataMode = "mock" | "api" | "local";
+
+type CourseDetail = {
+  id: string;
+  totalStudents: number;
+  totalLessons: number;
+  totalDuration: string;
+  rating: number;
+};
 
 type VideoProgress = {
+  id: string;
+  title: string;
+  description: string;
+  url: string;
+  status: ProgressStatus;
+  completedAt: number; // seconds
+  duration: string; // "10:54"
+  position: number;
+};
+
+type LessonProgress = {
+  lessonId: string;
+  title: string;
+  position: number;
+  status: ProgressStatus;
+  videos: VideoProgress[];
+};
+
+type TutorProfile = {
+  id: string;
+  name: string;
+  bio: string;
+};
+
+/* ===================== CourseTry Stored Shape ===================== */
+type TrackerVideo = {
   id: string;
   description: string;
   status: ProgressStatus;
   completedAt: number;
   title: string;
   url: string;
-  duration: number;
+  duration: number; // seconds
   position: number;
 };
+type TrackerLessonSection = { lessonId: string; videos: TrackerVideo[] };
 
-type LessonProgressApi = {
-  lessonId: string;
-  videoes?: VideoProgress[];
-  videos?: VideoProgress[];
-};
-
-type LessonSection = {
-  lessonId: string;
-  videos: VideoProgress[];
-};
-
-type Props = {
-  userId?: string;
-  courseId?: string;
-  idToken?: string;
-  apiBaseUrl?: string;
-
-  /** ✅ 3 โหมด: mock | api | local */
-  dataMode?: DataMode;
-
-  /** ถ้าโหมด local แล้วหาไม่เจอ ให้ fallback ไป mock ไหม */
-  localFallbackToMock?: boolean;
-
-  /** persist ลง localStorage ไหม (สำหรับ local) */
-  persistLocal?: boolean;
-};
-
-/* ===================== NOTE TYPES ===================== */
-type NoteItem = {
-  id: string;
-  videoId: string;
-  lessonId: string;
-  time: number;
-  text: string;
-  tags: string[];
-  createdAt: string;
-  updatedAt?: string;
-};
-
-type NotesByVideo = Record<string, NoteItem[]>;
-
-/* ===================== Utils ===================== */
+/* ===================== Shared helpers ===================== */
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
@@ -69,37 +63,113 @@ function formatTime(seconds: number) {
   return `${mm}:${String(ss).padStart(2, "0")}`;
 }
 
-function pill(status: ProgressStatus) {
-  switch (status) {
-    case "COMPLETED":
-      return "bg-[#FF7C92] text-white";
-    case "IN_PROGRESS":
-      return "bg-[#FFEE91] text-black";
-    case "AVAILABLE":
-      return "bg-[#464B9F] text-white";
-    case "LOCKED":
-    default:
-      return "bg-slate-600 text-white";
+function parseMMSS(s: string) {
+  const m = String(s || "")
+    .trim()
+    .match(/^(\d+):(\d{1,2})$/);
+  if (!m) return 0;
+  const mm = Number(m[1] || 0);
+  const ss = Number(m[2] || 0);
+  return mm * 60 + ss;
+}
+
+function makeProgressKey(courseId?: string, userId?: string) {
+  return `learney_progress_${courseId || "demoCourse"}_${userId || "anon"}`;
+}
+
+function loadProgress(key: string): TrackerLessonSection[] | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as TrackerLessonSection[];
+    if (!Array.isArray(parsed)) return null;
+    return parsed;
+  } catch {
+    return null;
   }
 }
 
-function nodeColor(status: ProgressStatus) {
+/** ✅ เอา progress จาก CourseTry มาทับบน mock ของ InfoCourse (match ตาม video.id) */
+function applyTrackerToInfoLessonProgress(
+  infoLessons: LessonProgress[],
+  tracker: TrackerLessonSection[],
+): LessonProgress[] {
+  const trackerVideoMap = new Map<string, TrackerVideo>();
+  tracker.forEach((l) => l.videos.forEach((v) => trackerVideoMap.set(v.id, v)));
+
+  return infoLessons.map((lesson) => ({
+    ...lesson,
+    videos: lesson.videos.map((v) => {
+      const tv = trackerVideoMap.get(v.id);
+      if (!tv) return v;
+      return {
+        ...v,
+        completedAt: tv.completedAt,
+        status: tv.status,
+        duration: formatTime(tv.duration), // "mm:ss"
+      };
+    }),
+  }));
+}
+
+/** ✅ คำนวณ % แบบเดียวกับ CourseTry (sum time) */
+function computeOverallPctFromInfoLessons(lessons: LessonProgress[]) {
+  const total = lessons.reduce(
+    (acc, l) => acc + l.videos.reduce((a, v) => a + parseMMSS(v.duration), 0),
+    0,
+  );
+  const done = lessons.reduce(
+    (acc, l) =>
+      acc +
+      l.videos.reduce(
+        (a, v) => a + clamp(v.completedAt, 0, parseMMSS(v.duration)),
+        0,
+      ),
+    0,
+  );
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  return { total, done, pct };
+}
+
+function isLessonCompleted(lesson: LessonProgress) {
+  if (lesson.videos.length === 0) return false;
+  return lesson.videos.every((v) => {
+    const dur = parseMMSS(v.duration);
+    return dur > 0 && v.completedAt >= dur;
+  });
+}
+
+/* ✅ สีจุด */
+function statusDotClass(status: ProgressStatus) {
   switch (status) {
     case "COMPLETED":
-      return "bg-[#FF7C92] text-black";
+      return "bg-[#FF8FA1]";
     case "IN_PROGRESS":
-      return "bg-[#FFEE91] text-black";
+      return "bg-[#FFEE91]";
     case "AVAILABLE":
-      return "bg-[#464B9F] text-white";
-    case "LOCKED":
+      return "bg-[#464B9F]";
     default:
-      return "bg-slate-500 text-white";
+      return "bg-white/20";
   }
 }
 
-/** ✅ status จริงของวิดีโอ (อิง completedAt/duration) */
-function getEffectiveVideoStatus(v: VideoProgress): ProgressStatus {
-  const dur = v.duration ?? 0;
+/* ✅ สีเส้น (แบบ CourseTry) */
+function statusLineClass(status: ProgressStatus) {
+  switch (status) {
+    case "COMPLETED":
+      return "bg-[#FF8FA1]";
+    case "IN_PROGRESS":
+      return "bg-[#FFEE91]";
+    case "AVAILABLE":
+      return "bg-[#464B9F]";
+    default:
+      return "bg-white/15";
+  }
+}
+
+/* ✅ status จริงของ video อิง completedAt/duration */
+function getEffectiveStatus(v: VideoProgress): ProgressStatus {
+  const dur = parseMMSS(v.duration);
   const done = v.completedAt ?? 0;
 
   if (v.status === "LOCKED") return "LOCKED";
@@ -108,490 +178,255 @@ function getEffectiveVideoStatus(v: VideoProgress): ProgressStatus {
   return v.status ?? "AVAILABLE";
 }
 
-/** ✅ สีเส้นด้านนอกสุด */
-function outerLineColor(status: ProgressStatus) {
-  switch (status) {
-    case "COMPLETED":
-      return "bg-[#FF7C92]";
-    case "IN_PROGRESS":
-      return "bg-[#FFEE91]";
-    case "AVAILABLE":
-      return "bg-[#464B9F]";
-    case "LOCKED":
-    default:
-      return "bg-slate-500";
-  }
-}
-
-function dotColor(status: ProgressStatus) {
-  return outerLineColor(status);
-}
-
-/** ✅ Segments ของเส้นด้านนอกสุด */
-function getLessonSegments(videos: VideoProgress[]): ProgressStatus[] {
-  const raw = (videos ?? []).map(getEffectiveVideoStatus);
+/* ✅ segments ของเส้นก้อนเดียว (เหมือน CourseTry concept) */
+function getSegmentsForVideos(videos: VideoProgress[]): ProgressStatus[] {
+  const raw = (videos ?? []).map(getEffectiveStatus);
   if (raw.length === 0) return ["LOCKED"];
 
   const allAvailable = raw.every((s) => s === "AVAILABLE");
   if (allAvailable) return raw.map(() => "AVAILABLE");
 
-  const hasInProgress = raw.includes("IN_PROGRESS");
-  const hasAvailable = raw.includes("AVAILABLE");
+  const hasIP = raw.includes("IN_PROGRESS");
+  const hasAvail = raw.includes("AVAILABLE");
 
-  if (hasInProgress && !hasAvailable) return raw.map(() => "IN_PROGRESS");
+  if (hasIP && !hasAvail) return raw.map(() => "IN_PROGRESS");
 
-  if (hasInProgress && hasAvailable) {
-    const firstAvailIdx = raw.findIndex((s) => s === "AVAILABLE");
-    return raw.map((s, i) => (i < firstAvailIdx ? "IN_PROGRESS" : s));
+  if (hasIP && hasAvail) {
+    const firstAvail = raw.findIndex((s) => s === "AVAILABLE");
+    return raw.map((s, i) => (i < firstAvail ? "IN_PROGRESS" : s));
   }
 
   return raw;
 }
 
-function deriveLessonStatus(videos: VideoProgress[]): ProgressStatus {
-  if (videos.length === 0) return "LOCKED";
-
-  const statuses: ProgressStatus[] = videos.map(getEffectiveVideoStatus);
-  const unique = new Set(statuses);
-
-  if (unique.size === 1 && unique.has("LOCKED")) return "LOCKED";
-  if (unique.has("IN_PROGRESS")) return "IN_PROGRESS";
-  if (unique.size === 1 && unique.has("COMPLETED")) return "COMPLETED";
-  if (unique.size === 1 && unique.has("AVAILABLE")) return "AVAILABLE";
-  return "IN_PROGRESS";
+function countCompletedVideos(videos: VideoProgress[]) {
+  const total = videos.length;
+  const done = videos.filter(
+    (v) => getEffectiveStatus(v) === "COMPLETED",
+  ).length;
+  return { done, total };
 }
 
-function deriveLessonProgress(videos: VideoProgress[]) {
-  const duration = videos.reduce((acc, v) => acc + (v.duration || 0), 0);
-  const completedAt = videos.reduce(
-    (acc, v) => acc + clamp(v.completedAt || 0, 0, v.duration || 0),
-    0,
-  );
-  const pct = duration > 0 ? Math.round((completedAt / duration) * 100) : 0;
-  return { duration, completedAt, pct };
+function pickHero(lessons: LessonProgress[]) {
+  const lIP =
+    lessons.find((l) => l.status === "IN_PROGRESS") ??
+    lessons.find((l) => l.status === "AVAILABLE") ??
+    lessons[0];
+  if (!lIP) return null;
+
+  const sortedVideos = [...lIP.videos].sort((a, b) => a.position - b.position);
+  const vIP =
+    sortedVideos.find((v) => v.status === "IN_PROGRESS") ??
+    sortedVideos.find((v) => v.status === "AVAILABLE") ??
+    sortedVideos[0];
+
+  const { done, total } = countCompletedVideos(sortedVideos);
+
+  return {
+    lesson: lIP,
+    video: vIP ?? null,
+    progressText: `PART ${lIP.position} | ${String(lIP.position).padStart(
+      2,
+      "0",
+    )} - ${lIP.title} (${sortedVideos[0]?.duration ?? "00:00"}) : ${done} / ${total}`,
+  };
 }
 
-function normalizeLessons(api: LessonProgressApi[]): LessonSection[] {
-  return (api || []).map((l) => {
-    const raw = l.videoes ?? l.videos ?? [];
-    const videos = [...raw].sort(
-      (a, b) => (a.position ?? 0) - (b.position ?? 0),
-    );
-    return { lessonId: l.lessonId, videos };
-  });
-}
-
-/* ===================== Mock (key by courseId) ===================== */
-function makeMockApiResponse(courseId?: string): LessonProgressApi[] {
-  // mock ให้ “ต่างกันตามคอร์ส” แบบง่าย ๆ
-  const seed = (courseId ?? "demo")
-    .split("")
-    .reduce((a, c) => a + c.charCodeAt(0), 0);
-  const rnd = (n: number) => (Math.sin(seed + n) + 1) / 2;
-
-  const uuid = (tag: string) => `${tag}-${Math.floor(rnd(tag.length) * 1e9)}`;
-
-  return [
-    {
-      lessonId: uuid("lesson-1"),
-      videoes: [
+/* ===================== Mock DB ===================== */
+const MOCK_DB: Record<
+  string,
+  {
+    course: CourseDetail;
+    tutor: TutorProfile;
+    lessonProgressByUser: Record<string, LessonProgress[]>;
+  }
+> = {
+  "course-english-001": {
+    course: {
+      id: "course-english-001",
+      totalStudents: 1234,
+      totalLessons: 20,
+      totalDuration: "8 สัปดาห์",
+      rating: 4.9,
+    },
+    tutor: {
+      id: "tutor-001",
+      name: "คอร์ส english",
+      bio: "สอนโดยผู้เชี่ยวชาญด้านภาษาอังกฤษกว่า 10 ปี\nมีประสบการณ์สอนนักเรียนมากกว่า 10,000 คน",
+    },
+    lessonProgressByUser: {
+      "user-demo": [
         {
-          id: uuid("v-1-1"),
+          lessonId: "lesson-01",
           title: "Verb",
-          description: "Understand what verbs are and how to use them.",
-          status: "COMPLETED",
-          completedAt: 600,
-          duration: 600,
-          url: "https://www.youtube.com/watch?v=_iIUGEOreiw",
           position: 1,
-        },
-        {
-          id: uuid("v-1-2"),
-          title: "Verb Examples",
-          description: "Extra examples to reinforce verb usage.",
           status: "COMPLETED",
-          completedAt: 300,
-          duration: 300,
-          url: "https://www.youtube.com/watch?v=2C4xsP1xR0Q",
-          position: 2,
+          videos: Array.from({ length: 5 }).map((_, i) => ({
+            id: `v-01-0${i + 1}`,
+            title: [
+              "Verb Intro",
+              "Verb Examples",
+              "Verb Practice",
+              "Verb Quiz",
+              "Verb Recap",
+            ][i],
+            description: "detail for video a little about this video",
+            url: "https://example.com/video.mp4",
+            status: "COMPLETED",
+            completedAt: 600,
+            duration: "10:00",
+            position: i + 1,
+          })),
         },
-      ],
-    },
-    {
-      lessonId: uuid("lesson-2"),
-      videoes: [
         {
-          id: uuid("v-2-1"),
+          lessonId: "lesson-02",
           title: "Past Simple",
-          description: "Learn past simple structure and usage patterns.",
-          status: "IN_PROGRESS",
-          completedAt: 240,
-          duration: 600,
-          url: "https://www.youtube.com/watch?v=p0JFc5giu9U",
-          position: 1,
-        },
-        {
-          id: uuid("v-2-2"),
-          title: "Past Simple Practice",
-          description: "Practice questions for past simple.",
-          status: "AVAILABLE",
-          completedAt: 0,
-          duration: 480,
-          url: "https://www.youtube.com/watch?v=p0JFc5giu9U",
           position: 2,
+          status: "IN_PROGRESS",
+          videos: [
+            {
+              id: "v-02-01",
+              title: "Past Positive",
+              description:
+                "เหมาะสำหรับผู้ที่ต้องการคำแนะนำอย่างต่อเนื่องและต้องการพัฒนาทักษะอย่างจริงจัง",
+              url: "https://www.youtube.com/watch?v=p0JFc5giu9U",
+              status: "IN_PROGRESS",
+              completedAt: 120,
+              duration: "10:54",
+              position: 1,
+            },
+            {
+              id: "v-02-02",
+              title: "Past Negative",
+              description: "detail for video a little about this video",
+              url: "https://www.youtube.com/watch?v=p0JFc5giu9U",
+              status: "AVAILABLE",
+              completedAt: 0,
+              duration: "10:00",
+              position: 2,
+            },
+          ],
         },
         {
-          id: uuid("v-2-3"),
-          title: "Past Simple Quiz",
-          description: "Quick quiz to test your understanding.",
-          status: "LOCKED",
-          completedAt: 0,
-          duration: 420,
-          url: "https://www.youtube.com/watch?v=p0JFc5giu9U",
+          lessonId: "lesson-03",
+          title: "Verb + ing",
           position: 3,
+          status: "AVAILABLE",
+          videos: [
+            {
+              id: "v-03-01",
+              title: "Gerund Basics",
+              description: "detail for video a little about this video",
+              url: "https://example.com/video.mp4",
+              status: "AVAILABLE",
+              completedAt: 0,
+              duration: "10:00",
+              position: 1,
+            },
+            {
+              id: "v-03-02",
+              title: "Rules",
+              description: "detail ...",
+              url: "https://example.com/video.mp4",
+              status: "LOCKED",
+              completedAt: 0,
+              duration: "10:00",
+              position: 2,
+            },
+            {
+              id: "v-03-03",
+              title: "Examples",
+              description: "detail ...",
+              url: "https://example.com/video.mp4",
+              status: "LOCKED",
+              completedAt: 0,
+              duration: "10:00",
+              position: 3,
+            },
+            {
+              id: "v-03-04",
+              title: "Practice",
+              description: "detail ...",
+              url: "https://example.com/video.mp4",
+              status: "LOCKED",
+              completedAt: 0,
+              duration: "10:00",
+              position: 4,
+            },
+            {
+              id: "v-03-05",
+              title: "Quiz",
+              description: "detail ...",
+              url: "https://example.com/video.mp4",
+              status: "LOCKED",
+              completedAt: 0,
+              duration: "10:00",
+              position: 5,
+            },
+          ],
         },
       ],
     },
-  ];
-}
-
-/* ===================== API ===================== */
-async function fetchLessonProgress(params: {
-  apiBaseUrl: string;
-  userId: string;
-  courseId: string;
-  idToken: string;
-}): Promise<LessonSection[]> {
-  const { apiBaseUrl, userId, courseId, idToken } = params;
-
-  const res = await fetch(`${apiBaseUrl}/api/lesson-progress/get-all-details`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${idToken}`,
-    },
-    body: JSON.stringify({ userId, courseId }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(
-      `Fetch failed: ${res.status} ${res.statusText} ${text}`.trim(),
-    );
-  }
-
-  const data = (await res.json()) as LessonProgressApi[];
-  return normalizeLessons(data);
-}
-
-/* ===================== Local persistence for lessons ===================== */
-function lessonsStorageKey(courseId?: string, userId?: string) {
-  return `learney_lessons_${courseId || "demoCourse"}_${userId || "anon"}`;
-}
-
-function loadLessonsFromLocal(key: string): LessonSection[] | null {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as LessonSection[];
-    if (!Array.isArray(parsed)) return null;
-    // basic validate
-    if (parsed.some((l) => !l.lessonId || !Array.isArray(l.videos)))
-      return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-function saveLessonsToLocal(key: string, lessons: LessonSection[]) {
-  try {
-    localStorage.setItem(key, JSON.stringify(lessons));
-  } catch {}
-}
-
-/* ===================== Notes storage ===================== */
-function uid() {
-  return (
-    (globalThis.crypto as any)?.randomUUID?.() ??
-    `note_${Date.now()}_${Math.random().toString(16).slice(2)}`
-  );
-}
-
-function loadNotes(key: string): NotesByVideo {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as NotesByVideo;
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-function saveNotes(key: string, data: NotesByVideo) {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch {}
-}
-
-/* ===================== YouTube helpers ===================== */
-function isProbablyYouTube(url: string) {
-  return /youtube\.com|youtu\.be/i.test(url);
-}
-
-function getYouTubeVideoId(url: string): string | null {
-  try {
-    const short = url.match(/youtu\.be\/([a-zA-Z0-9_-]{6,})/);
-    if (short?.[1]) return short[1];
-
-    const u = new URL(url);
-    const v = u.searchParams.get("v");
-    if (v) return v;
-
-    const embed = url.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]{6,})/);
-    if (embed?.[1]) return embed[1];
-
-    return null;
-  } catch {
-    const m = url.match(/[?&]v=([a-zA-Z0-9_-]{6,})/);
-    return m?.[1] ?? null;
-  }
-}
-
-declare global {
-  interface Window {
-    YT?: any;
-    onYouTubeIframeAPIReady?: () => void;
-  }
-}
-
-function useYouTubeApiReady() {
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    if (window.YT && window.YT.Player) {
-      setReady(true);
-      return;
-    }
-
-    const existing = document.querySelector(
-      'script[src="https://www.youtube.com/iframe_api"]',
-    ) as HTMLScriptElement | null;
-
-    window.onYouTubeIframeAPIReady = () => setReady(true);
-
-    if (!existing) {
-      const tag = document.createElement("script");
-      tag.src = "https://www.youtube.com/iframe_api";
-      tag.async = true;
-      document.head.appendChild(tag);
-    }
-
-    const t = window.setInterval(() => {
-      if (window.YT && window.YT.Player) {
-        window.clearInterval(t);
-        setReady(true);
-      }
-    }, 250);
-
-    return () => window.clearInterval(t);
-  }, []);
-
-  return ready;
-}
+  },
+};
 
 /* ===================== Component ===================== */
-export default function LessonVideoTracker({
-  userId,
-  courseId,
-  idToken,
-  apiBaseUrl,
-  dataMode,
-  localFallbackToMock,
-  persistLocal,
-}: Props) {
-  /** ✅ ไม่มี default mock แล้ว */
-  const [lessons, setLessons] = useState<LessonSection[]>([]);
-  const [expandedLessonIds, setExpandedLessonIds] = useState<Set<string>>(
-    () => new Set(),
-  );
-  const [activeVideoId, setActiveVideoId] = useState<string>("");
+export default function InfoCourse(props?: {
+  courseId?: string;
+  userId?: string;
+}) {
+  const params = useParams();
+  const navigate = useNavigate();
 
-  const [panelOpen, setPanelOpen] = useState(true);
-  const [mode, setMode] = useState<Mode>("subject");
+  const courseId =
+    props?.courseId ?? (params.courseId as string) ?? "course-english-001";
+  const userId = props?.userId ?? "user-demo";
 
-  const TOP_OFFSET = 64;
-  const PANEL_W = 390;
+  const data = MOCK_DB[courseId];
+  if (!data) {
+    return (
+      <section className="min-h-screen w-full bg-gradient-to-b from-[#47304B] from-60% to-[#070D2D] text-white grid place-items-center px-6">
+        <div className="max-w-xl text-center">
+          <div className="text-2xl font-bold">Course not found (mock)</div>
+          <div className="mt-2 text-white/70">courseId: {courseId}</div>
+        </div>
+      </section>
+    );
+  }
 
-  /* ===== Notes ===== */
-  const NOTES_KEY = useMemo(() => {
-    const cid = courseId || "demoCourse";
-    const uid2 = userId || "anon";
-    return `learney_notes_${cid}_${uid2}`;
-  }, [courseId, userId]);
+  const course = data.course;
+  const tutor = data.tutor;
 
-  const [notesByVideo, setNotesByVideo] = useState<NotesByVideo>(() =>
-    loadNotes(NOTES_KEY),
-  );
-  useEffect(() => setNotesByVideo(loadNotes(NOTES_KEY)), [NOTES_KEY]);
-  useEffect(
-    () => saveNotes(NOTES_KEY, notesByVideo),
-    [NOTES_KEY, notesByVideo],
-  );
+  const baseLessonProgress = data.lessonProgressByUser[userId] ?? [];
 
-  /* ===== 3-mode loader ===== */
-  const LESSONS_KEY = useMemo(
-    () => lessonsStorageKey(courseId, userId),
+  const progressKey = useMemo(
+    () => makeProgressKey(courseId, userId),
     [courseId, userId],
   );
+  const storedTracker = useMemo(() => loadProgress(progressKey), [progressKey]);
 
-  useEffect(() => {
-    let cancelled = false;
+  const lessonProgress = useMemo(() => {
+    if (!storedTracker) return baseLessonProgress;
+    return applyTrackerToInfoLessonProgress(baseLessonProgress, storedTracker);
+  }, [baseLessonProgress, storedTracker]);
 
-    async function load() {
-      try {
-        // 1) local
-        if (dataMode === "local") {
-          const local = loadLessonsFromLocal(LESSONS_KEY);
-          if (local && !cancelled) {
-            setLessons(local);
-            return;
-          }
-          if (localFallbackToMock) {
-            const mock = normalizeLessons(makeMockApiResponse(courseId));
-            if (!cancelled) setLessons(mock);
-            return;
-          }
-          if (!cancelled) setLessons([]);
-          return;
-        }
-
-        // 2) api
-        if (dataMode === "api") {
-          if (!apiBaseUrl || !userId || !courseId || !idToken) {
-            if (!cancelled) setLessons([]);
-            return;
-          }
-          const real = await fetchLessonProgress({
-            apiBaseUrl,
-            userId,
-            courseId,
-            idToken,
-          });
-          if (!cancelled) setLessons(real);
-          return;
-        }
-
-        // 3) mock
-        const mock = normalizeLessons(makeMockApiResponse(courseId));
-        if (!cancelled) setLessons(mock);
-      } catch (e) {
-        console.error(e);
-        if (!cancelled) setLessons([]);
-      }
-    }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    dataMode,
-    LESSONS_KEY,
-    apiBaseUrl,
-    userId,
-    courseId,
-    idToken,
-    localFallbackToMock,
-  ]);
-
-  /** ✅ persist lessons (เฉพาะ dataMode=local หรืออยากเก็บไว้ใช้ต่อ) */
-  useEffect(() => {
-    if (!persistLocal) return;
-    if (dataMode !== "local") return; // ถ้าอยากให้ api/mock ก็เก็บได้ ให้เอาเงื่อนไขนี้ออก
-    if (!lessons.length) return;
-    saveLessonsToLocal(LESSONS_KEY, lessons);
-  }, [persistLocal, dataMode, LESSONS_KEY, lessons]);
-
-  /* ===== scroll lock (mobile) ===== */
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    const shouldLock =
-      panelOpen && window.matchMedia("(max-width: 1023px)").matches;
-    document.body.style.overflow = shouldLock ? "hidden" : prev || "";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [panelOpen]);
-
-  /* ===== derived views ===== */
-  const lessonView = useMemo(() => {
-    return lessons.map((lesson, idx) => {
-      const status = deriveLessonStatus(lesson.videos);
-      const progress = deriveLessonProgress(lesson.videos);
-      const title = `Lesson ${idx + 1}`;
-      return { ...lesson, idx, title, status, progress };
-    });
-  }, [lessons]);
-
-  const flatVideos = useMemo(() => {
-    const out: Array<{
-      lessonId: string;
-      lessonIndex: number;
-      lessonTitle: string;
-      lessonStatus: ProgressStatus;
-      video: VideoProgress;
-    }> = [];
-
-    lessonView.forEach((l) => {
-      l.videos.forEach((v) => {
-        out.push({
-          lessonId: l.lessonId,
-          lessonIndex: l.idx,
-          lessonTitle: l.title,
-          lessonStatus: l.status,
-          video: v,
-        });
-      });
-    });
-
-    return out;
-  }, [lessonView]);
-
-  const active = useMemo(
-    () => flatVideos.find((x) => x.video.id === activeVideoId) ?? null,
-    [flatVideos, activeVideoId],
+  const overall = useMemo(
+    () => computeOverallPctFromInfoLessons(lessonProgress),
+    [lessonProgress],
   );
+  const completedLessons = useMemo(
+    () => lessonProgress.filter(isLessonCompleted).length,
+    [lessonProgress],
+  );
+  const completedPercent = overall.pct;
 
-  /** ✅ default active (อันนี้ควรมี) */
-  useEffect(() => {
-    if (activeVideoId) return;
-    if (flatVideos.length === 0) return;
+  const hero = useMemo(() => pickHero(lessonProgress), [lessonProgress]);
 
-    const firstUnlocked = flatVideos.find((x) => x.video.status !== "LOCKED");
-    const pick = firstUnlocked ?? flatVideos[0];
-
-    if (pick) {
-      setActiveVideoId(pick.video.id);
-      setExpandedLessonIds((prev) => new Set(prev).add(pick.lessonId));
-    }
-  }, [activeVideoId, flatVideos]);
-
-  useEffect(() => {
-    if (!active) return;
-    setExpandedLessonIds((prev) => {
-      if (prev.has(active.lessonId)) return prev;
-      const next = new Set(prev);
-      next.add(active.lessonId);
-      return next;
-    });
-  }, [active]);
-
+  const [openLessonIds, setOpenLessonIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   function toggleLesson(lessonId: string) {
-    setExpandedLessonIds((prev) => {
+    setOpenLessonIds((prev) => {
       const next = new Set(prev);
       if (next.has(lessonId)) next.delete(lessonId);
       else next.add(lessonId);
@@ -599,913 +434,290 @@ export default function LessonVideoTracker({
     });
   }
 
-  function updateVideo(videoId: string, patch: Partial<VideoProgress>) {
-    setLessons((prev) =>
-      prev.map((lesson) => ({
-        ...lesson,
-        videos: lesson.videos.map((v) =>
-          v.id === videoId ? { ...v, ...patch } : v,
-        ),
-      })),
-    );
-  }
-
-  function unlockNextAfter(videoId: string) {
-    const idx = flatVideos.findIndex((x) => x.video.id === videoId);
-    if (idx < 0) return;
-
-    const current = flatVideos[idx];
-    const nextSameLesson = flatVideos
-      .slice(idx + 1)
-      .find((x) => x.lessonId === current.lessonId);
-
-    if (nextSameLesson && nextSameLesson.video.status === "LOCKED") {
-      updateVideo(nextSameLesson.video.id, { status: "AVAILABLE" });
-      return;
-    }
-
-    const nextAny = flatVideos
-      .slice(idx + 1)
-      .find((x) => x.video.status === "LOCKED");
-    if (nextAny) updateVideo(nextAny.video.id, { status: "AVAILABLE" });
-  }
-
-  function setProgress(videoId: string, newCompletedAt: number) {
-    const v = flatVideos.find((x) => x.video.id === videoId)?.video;
-    if (!v) return;
-
-    const completedAt = clamp(newCompletedAt, 0, v.duration || newCompletedAt);
-    let status: ProgressStatus = v.status;
-
-    if (completedAt <= 0)
-      status = v.status === "LOCKED" ? "LOCKED" : "AVAILABLE";
-    else if (v.duration > 0 && completedAt >= v.duration) status = "COMPLETED";
-    else status = "IN_PROGRESS";
-
-    updateVideo(videoId, { completedAt, status });
-    if (status === "COMPLETED") unlockNextAfter(videoId);
-  }
-
-  function markComplete(videoId: string) {
-    const v = flatVideos.find((x) => x.video.id === videoId)?.video;
-    if (!v) return;
-    updateVideo(videoId, { completedAt: v.duration, status: "COMPLETED" });
-    unlockNextAfter(videoId);
-  }
-
-  function goNextVideo() {
-    if (!active) return;
-    markComplete(active.video.id);
-
-    const idx = flatVideos.findIndex((x) => x.video.id === active.video.id);
-    const next = flatVideos
-      .slice(idx + 1)
-      .find((x) => x.video.status !== "LOCKED");
-    if (next) setActiveVideoId(next.video.id);
-  }
-
-  const overallPct = useMemo(() => {
-    const total = flatVideos.reduce(
-      (acc, x) => acc + (x.video.duration || 0),
-      0,
-    );
-    const done = flatVideos.reduce(
-      (acc, x) =>
-        acc + clamp(x.video.completedAt || 0, 0, x.video.duration || 0),
-      0,
-    );
-    return total > 0 ? Math.round((done / total) * 100) : 0;
-  }, [flatVideos]);
-
-  /* ===================== Notes logic ===================== */
-  const activeNotes = useMemo(() => {
-    if (!activeVideoId) return [];
-    return notesByVideo[activeVideoId] ?? [];
-  }, [notesByVideo, activeVideoId]);
-
-  const allNotes = useMemo(() => {
-    const items: NoteItem[] = [];
-    Object.values(notesByVideo).forEach((arr) => items.push(...arr));
-    return items.sort((a, b) =>
-      (b.updatedAt ?? b.createdAt).localeCompare(a.updatedAt ?? a.createdAt),
-    );
-  }, [notesByVideo]);
-
-  const [noteDraft, setNoteDraft] = useState({ text: "", tags: "" });
-
-  useEffect(() => {
-    setNoteDraft({ text: "", tags: "" });
-  }, [activeVideoId]);
-
-  /* ===================== PLAYER (Hybrid: YouTube + HTML5) ===================== */
-  const ytReady = useYouTubeApiReady();
-  const ytPlayerRef = useRef<any>(null);
-  const htmlVideoRef = useRef<HTMLVideoElement | null>(null);
-
-  const pendingSeekRef = useRef<{
-    videoId: string;
-    time: number;
-    autoplay?: boolean;
-  } | null>(null);
-  const [pauseWhileTyping, setPauseWhileTyping] = useState(true);
-
-  const ytPollRef = useRef<number | null>(null);
-  const lastTickRef = useRef(0);
-
-  function stopYtPolling() {
-    if (ytPollRef.current) {
-      window.clearInterval(ytPollRef.current);
-      ytPollRef.current = null;
-    }
-  }
-
-  function startYtPolling() {
-    stopYtPolling();
-    ytPollRef.current = window.setInterval(() => {
-      if (!active || !ytPlayerRef.current) return;
-
-      const now = Date.now();
-      if (now - lastTickRef.current < 800) return;
-      lastTickRef.current = now;
-
-      try {
-        const t = Number(ytPlayerRef.current.getCurrentTime?.() ?? 0);
-        setProgress(active.video.id, t);
-
-        const dur = Number(ytPlayerRef.current.getDuration?.() ?? 0);
-        if (dur > 0 && Math.abs((active.video.duration || 0) - dur) > 1) {
-          updateVideo(active.video.id, { duration: Math.floor(dur) });
-        }
-      } catch {}
-    }, 250);
-  }
-
-  function destroyYtPlayer() {
-    stopYtPolling();
-    try {
-      ytPlayerRef.current?.destroy?.();
-    } catch {}
-    ytPlayerRef.current = null;
-  }
-
-  function handleHtmlTimeUpdate() {
-    if (!active || !htmlVideoRef.current) return;
-
-    const now = Date.now();
-    if (now - lastTickRef.current < 800) return;
-    lastTickRef.current = now;
-
-    const t = htmlVideoRef.current.currentTime || 0;
-    setProgress(active.video.id, t);
-  }
-
-  function handleHtmlLoadedMetadata() {
-    if (!active || !htmlVideoRef.current) return;
-    const el = htmlVideoRef.current;
-
-    const dur = el.duration;
-    if (
-      Number.isFinite(dur) &&
-      dur > 0 &&
-      (!active.video.duration || active.video.duration <= 0)
-    ) {
-      updateVideo(active.video.id, { duration: Math.floor(dur) });
-    }
-
-    const ps = pendingSeekRef.current;
-    if (ps && ps.videoId === active.video.id) {
-      try {
-        const maxD =
-          active.video.duration || Math.floor(dur) || Number.MAX_SAFE_INTEGER;
-        const tt = clamp(ps.time, 0, maxD);
-        el.currentTime = tt;
-        setProgress(active.video.id, tt);
-        if (ps.autoplay) el.play().catch(() => {});
-      } catch {}
-
-      pendingSeekRef.current = null;
-      return;
-    }
-
-    try {
-      el.currentTime = clamp(
-        active.video.completedAt || 0,
-        0,
-        active.video.duration || Math.floor(dur) || 0,
-      );
-    } catch {}
-  }
-
-  function handleHtmlEnded() {
-    if (!active) return;
-    markComplete(active.video.id);
-  }
-
-  function getNowTimeAny() {
-    if (!active) return 0;
-
-    if (isProbablyYouTube(active.video.url)) {
-      const t = Number(ytPlayerRef.current?.getCurrentTime?.() ?? NaN);
-      if (Number.isFinite(t)) return t;
-      return active.video.completedAt || 0;
-    }
-
-    const t = Number(htmlVideoRef.current?.currentTime ?? NaN);
-    if (Number.isFinite(t)) return t;
-    return active.video.completedAt || 0;
-  }
-
-  function getDurationAny() {
-    if (!active) return 0;
-
-    if (isProbablyYouTube(active.video.url)) {
-      const d = Number(ytPlayerRef.current?.getDuration?.() ?? NaN);
-      if (Number.isFinite(d) && d > 0) return d;
-      return active.video.duration || 0;
-    }
-
-    const d = Number(htmlVideoRef.current?.duration ?? NaN);
-    if (Number.isFinite(d) && d > 0) return d;
-    return active.video.duration || 0;
-  }
-
-  function pauseAny() {
-    if (!active) return;
-    if (isProbablyYouTube(active.video.url)) {
-      ytPlayerRef.current?.pauseVideo?.();
-      return;
-    }
-    htmlVideoRef.current?.pause();
-  }
-
-  function seekAny(time: number, autoplay = false) {
-    if (!active) return;
-
-    const dur = getDurationAny();
-    const t = clamp(time, 0, dur > 0 ? dur : Number.MAX_SAFE_INTEGER);
-
-    if (isProbablyYouTube(active.video.url)) {
-      if (!ytPlayerRef.current?.seekTo) {
-        pendingSeekRef.current = {
-          videoId: active.video.id,
-          time: t,
-          autoplay,
-        };
-        return;
-      }
-
-      ytPlayerRef.current.seekTo(t, true);
-      setProgress(active.video.id, t);
-      if (autoplay) ytPlayerRef.current.playVideo?.();
-      else ytPlayerRef.current.pauseVideo?.();
-      return;
-    }
-
-    const el = htmlVideoRef.current;
-    if (!el) {
-      pendingSeekRef.current = { videoId: active.video.id, time: t, autoplay };
-      return;
-    }
-
-    try {
-      el.currentTime = t;
-      setProgress(active.video.id, t);
-      if (autoplay) el.play().catch(() => {});
-    } catch {
-      pendingSeekRef.current = { videoId: active.video.id, time: t, autoplay };
-    }
-  }
-
-  useEffect(() => {
-    if (!active) return;
-
-    const isYT = isProbablyYouTube(active.video.url);
-    if (!isYT) {
-      destroyYtPlayer();
-      return;
-    }
-    if (!ytReady) return;
-
-    const vid = getYouTubeVideoId(active.video.url);
-    if (!vid) return;
-
-    const mountId = `yt-player-${active.video.id}`;
-    const mount = document.getElementById(mountId);
-    if (!mount) return;
-
-    destroyYtPlayer();
-
-    ytPlayerRef.current = new (window as any).YT.Player(mountId, {
-      videoId: vid,
-      playerVars: { rel: 0, modestbranding: 1, playsinline: 1 },
-      events: {
-        onReady: () => {
-          try {
-            const dur = Number(ytPlayerRef.current.getDuration?.() ?? 0);
-            if (
-              dur > 0 &&
-              (!active.video.duration || active.video.duration <= 0)
-            ) {
-              updateVideo(active.video.id, { duration: Math.floor(dur) });
-            }
-
-            const ps = pendingSeekRef.current;
-            if (ps && ps.videoId === active.video.id) {
-              const tt = clamp(
-                ps.time,
-                0,
-                dur > 0 ? dur : Number.MAX_SAFE_INTEGER,
-              );
-              ytPlayerRef.current.seekTo?.(tt, true);
-              setProgress(active.video.id, tt);
-              if (ps.autoplay) ytPlayerRef.current.playVideo?.();
-              else ytPlayerRef.current.pauseVideo?.();
-              pendingSeekRef.current = null;
-              return;
-            }
-
-            const base = clamp(
-              active.video.completedAt || 0,
-              0,
-              dur > 0 ? dur : Number.MAX_SAFE_INTEGER,
-            );
-            ytPlayerRef.current.seekTo?.(base, true);
-          } catch {}
-        },
-        onStateChange: (e: any) => {
-          const st = e?.data;
-          if (st === 1) startYtPolling();
-          if (st === 2) stopYtPolling();
-          if (st === 0) {
-            stopYtPolling();
-            markComplete(active.video.id);
-          }
-        },
-      },
-    });
-
-    return () => destroyYtPlayer();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active?.video.id, ytReady]);
-
-  /* ===================== UI ===================== */
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#47304B]  to-[#070D2D] text-white">
-      {panelOpen && (
-        <div
-          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden"
-          onClick={() => setPanelOpen(false)}
-        />
-      )}
+    <section className="min-h-screen w-full bg-gradient-to-b from-[#47304B] from-60% to-[#070D2D] text-white">
+      <div className="h-screen overflow-y-auto hide-scrollbar px-6 lg:px-10 pt-20 pb-10">
+        <div className="mx-auto w-full max-w-6xl">
+          <h1 className="text-4xl lg:text-5xl font-extrabold tracking-wide mb-8">
+            English Mastery Course
+          </h1>
 
-      <div
-        className="min-h-screen transition-[padding-right] duration-300"
-        style={{ paddingRight: panelOpen ? PANEL_W : 0 }}
-      >
-        <div
-          className="mx-auto max-w-6xl px-4"
-          style={{ paddingTop: TOP_OFFSET + 24 }}
-        >
-          <section className="rounded-2xl p-6">
-            {!active ?
-              <p className="text-white/70">No video (dataMode: {dataMode})</p>
-            : <>
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-xs text-white/70">
-                      {active.lessonTitle}
-                    </p>
-                    <h3 className="truncate text-xl font-semibold">
-                      {active.video.title}
-                    </h3>
-                  </div>
-
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-bold ${pill(
-                      active.video.status,
-                    )}`}
-                  >
-                    {active.video.status}
+          {/* HERO */}
+          <div className="w-full rounded-3xl bg-[#23213B]/60 p-6 lg:p-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="rounded-2xl overflow-hidden bg-black/20 border border-white/5">
+                <div className="h-64 lg:h-72 w-full bg-white/5 flex items-center justify-center">
+                  <span className="text-white/60">
+                    {hero?.video ? "Video Preview" : "No active lesson"}
                   </span>
                 </div>
+              </div>
 
-                <div className="mt-6 rounded-2xl bg-black/25 ring-1 ring-white/10 overflow-hidden">
-                  {isProbablyYouTube(active.video.url) ?
-                    <div className="w-full aspect-video bg-black">
-                      <div
-                        id={`yt-player-${active.video.id}`}
-                        className="w-full h-full"
-                      />
-                    </div>
-                  : <video
-                      ref={htmlVideoRef}
-                      className="w-full aspect-video bg-black"
-                      src={active.video.url}
-                      controls
-                      onTimeUpdate={handleHtmlTimeUpdate}
-                      onLoadedMetadata={handleHtmlLoadedMetadata}
-                      onEnded={handleHtmlEnded}
-                      onPlay={(e) => {
-                        if (active.video.status === "LOCKED")
-                          (e.currentTarget as HTMLVideoElement).pause();
-                      }}
-                    />
+              <div className="rounded-2xl bg-white/5 border border-white/5 p-6 lg:p-7 flex flex-col justify-center">
+                <p className="text-sm text-white/70 tracking-wide mb-2">
+                  {hero?.progressText ?? "-"}
+                </p>
+
+                <h2 className="text-3xl lg:text-4xl font-bold mb-3">
+                  {hero?.video ?
+                    `${hero.lesson.position}.${String(hero.video.position).padStart(2, "0")} - ${hero.video.title}`
+                  : "-"}
+                </h2>
+
+                <p className="text-white/70 leading-relaxed mb-6">
+                  {hero?.video?.description ?? "—"}
+                </p>
+
+                <button
+                  onClick={() =>
+                    navigate("/courses", {
+                      state: {
+                        courseId,
+                        userId,
+                        lessonId: hero?.lesson.lessonId,
+                        videoId: hero?.video?.id,
+                      },
+                    })
                   }
-                </div>
-
-                <div className="mt-8 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={goNextVideo}
-                    className="rounded-full bg-pink-400 px-6 py-3 text-base font-semibold text-white hover:bg-pink-500"
-                  >
-                    Next Video
-                  </button>
-                </div>
-              </>
-            }
-          </section>
-        </div>
-      </div>
-
-      {/* RIGHT PANEL */}
-      <aside
-        className="fixed right-0 bg-[#23213B] z-50 transition-transform duration-300 ease-in-out"
-        style={{
-          top: TOP_OFFSET,
-          height: `calc(100% - ${TOP_OFFSET}px)`,
-          width: PANEL_W,
-          transform: panelOpen ? "translateX(0px)" : `translateX(${PANEL_W}px)`,
-        }}
-      >
-        <div className="h-full bg-white/5 backdrop-blur-md ring-1 ring-white/10 relative">
-          <button
-            type="button"
-            onClick={() => setPanelOpen((v) => !v)}
-            className="absolute -left-10 top-15 h-12 w-10 rounded-l-2xl bg-pink-300/90 text-black grid place-items-center shadow-lg"
-            aria-label="Toggle progress panel"
-          >
-            <span className="text-3xl ml-2 mt-0.5 leading-none">
-              {panelOpen ? ">" : "<"}
-            </span>
-          </button>
-
-          <div className="flex items-center justify-end gap-2 pr-20 mb-5 pt-5">
-            <button
-              type="button"
-              onClick={() => setMode("subject")}
-              className={[
-                "rounded-full px-4 py-2 text-[12px] font-semibold transition",
-                mode === "subject" ?
-                  "bg-yellow-300 text-black"
-                : "bg-white/10 text-white hover:bg-white/15",
-              ].join(" ")}
-            >
-              Subject
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMode("note")}
-              className={[
-                "rounded-full px-4 py-2 text-[12px] font-semibold transition",
-                mode === "note" ?
-                  "bg-pink-400 text-white"
-                : "bg-white/10 text-white hover:bg-white/15",
-              ].join(" ")}
-            >
-              Note
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMode("all")}
-              className={[
-                "rounded-full px-4 py-2 text-[12px] font-semibold transition",
-                mode === "all" ?
-                  "bg-violet-400 text-white"
-                : "bg-white/10 text-white hover:bg-white/15",
-              ].join(" ")}
-            >
-              All Note
-            </button>
-          </div>
-
-          <div className="px-6 pt-3">
-            <div className="text-center text-4xl font-extrabold tracking-wide">
-              PROGRESS
-            </div>
-
-            <div className="mt-4 mb-5 h-2 w-full rounded-full bg-white/10 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-[#464B9F] via-[#EA688E] to-[#F1F069] transition-all"
-                style={{ width: `${overallPct}%` }}
-              />
-            </div>
-
-            {/* debug */}
-            <div className="text-center text-[10px] text-white/40">
-              dataMode: {dataMode} • courseId: {courseId || "-"} • userId:{" "}
-              {userId || "-"}
+                  className="w-fit px-10 py-3 rounded-full bg-[#FF8FA1] text-white font-semibold shadow-[0_10px_30px_rgba(255,143,161,0.35)] hover:brightness-110 active:brightness-95 transition"
+                >
+                  Start Lesson
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="px-6 pt-6 pb-10 overflow-auto h-[calc(100%-170px)]">
-            {mode === "subject" && (
-              <ul>
-                {lessonView.map((lesson, idx) => {
-                  const isLast = idx === lessonView.length - 1;
-                  const isExpanded = expandedLessonIds.has(lesson.lessonId);
-                  const segments = getLessonSegments(lesson.videos);
-                  const hideOuterLine = isLast && !isExpanded;
+          {/* BOTTOM */}
+          <div className="mt-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* LEFT */}
+            <div className="lg:col-span-2 space-y-4">
+              {lessonProgress
+                .slice()
+                .sort((a, b) => a.position - b.position)
+                .map((l) => {
+                  const sorted = l.videos
+                    .slice()
+                    .sort((a, b) => a.position - b.position);
+                  const segments = getSegmentsForVideos(sorted);
+                  const { done, total } = countCompletedVideos(sorted);
+                  const isOpen = openLessonIds.has(l.lessonId);
 
                   return (
-                    <li
-                      key={lesson.lessonId}
-                      className={`relative pl-12 ${!isLast ? "pb-6" : ""}`}
+                    <PartRow
+                      key={l.lessonId}
+                      title={`PART ${l.position} - ${l.title}`}
+                      sub={`${done} / ${total} Complete`}
+                      open={isOpen}
+                      onToggle={() => toggleLesson(l.lessonId)}
                     >
-                      {!hideOuterLine && (
-                        <div className="absolute left-[12px] top-0 bottom-0 w-1 rounded-full overflow-hidden z-0 bg-white/10">
-                          <div className="h-full w-full flex flex-col">
-                            {segments.map((st, i) => (
-                              <div
-                                key={`${lesson.lessonId}-seg-${i}`}
-                                className={`flex-1 w-full ${outerLineColor(
-                                  st,
-                                )}`}
-                              />
-                            ))}
+                      {/* ✅ Videos list (เส้นก้อนเดียวแบบ CourseTry — ไม่มีหางบัค) */}
+                      <div className="mt-4 rounded-2xl p-4">
+                        <div className="relative">
+                          {/* outer line */}
+                          <div className="absolute left-[1.5rem] top-3 bottom-3 w-1 rounded-full overflow-hidden bg-white/10">
+                            <div className="h-full w-full flex flex-col">
+                              {segments.map((st, i) => (
+                                <div
+                                  key={`${l.lessonId}-seg-${i}`}
+                                  className={`flex-1 w-full ${statusLineClass(st)}`}
+                                />
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
 
-                      <div
-                        className={[
-                          "absolute -left-0.5 -top-1 grid h-8 w-8 place-items-center rounded-full text-xs font-bold z-10",
-                          nodeColor(lesson.status),
-                        ].join(" ")}
-                      >
-                        {idx + 1}
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => toggleLesson(lesson.lessonId)}
-                        className="w-full text-left"
-                      >
-                        <div className="flex items-center mt-[0.5px] justify-between gap-3">
-                          <div className="text-lg font-medium text-white/90">
-                            {lesson.title}
-                          </div>
-                          <div className="text-xs text-white/60">
-                            {isExpanded ? "Hide" : "Show"}
-                          </div>
-                        </div>
-
-                        <div className="mt-2 text-xs text-white/60">
-                          {formatTime(lesson.progress.completedAt)} /{" "}
-                          {formatTime(lesson.progress.duration)} •{" "}
-                          {lesson.progress.pct}%
-                        </div>
-                      </button>
-
-                      {isExpanded && (
-                        <div className="mt-4 space-y-4 ml-0">
-                          {lesson.videos.map((v) => {
-                            const isActive = v.id === activeVideoId;
-                            const disabled = v.status === "LOCKED";
-
-                            const pct =
-                              v.duration > 0 ?
-                                Math.round(
-                                  (clamp(v.completedAt || 0, 0, v.duration) /
-                                    v.duration) *
-                                    100,
-                                )
-                              : 0;
-
-                            const cur = getEffectiveVideoStatus(v);
-
-                            return (
-                              <button
-                                key={v.id}
-                                type="button"
-                                onClick={() =>
-                                  !disabled && setActiveVideoId(v.id)
-                                }
-                                className={[
-                                  "w-full text-left rounded-2xl px-4 py-3 transition ring-1",
-                                  isActive ?
-                                    "bg-white/10 ring-white/15"
-                                  : "bg-white/0 ring-white/10 hover:bg-white/5",
-                                  disabled ?
-                                    "opacity-60 cursor-not-allowed"
-                                  : "cursor-pointer",
-                                ].join(" ")}
-                              >
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="flex items-start gap-3 min-w-0">
-                                    <span
+                          <div className="space-y-4">
+                            {sorted.map((v) => {
+                              const eff = getEffectiveStatus(v);
+                              return (
+                                <button
+                                  key={v.id}
+                                  type="button"
+                                  onClick={() =>
+                                    navigate("/courses", {
+                                      state: {
+                                        courseId,
+                                        userId,
+                                        lessonId: l.lessonId,
+                                        videoId: v.id,
+                                      },
+                                    })
+                                  }
+                                  className="w-full text-left flex items-center justify-between gap-4 rounded-2xl px-3 py-3 hover:bg-white/5 active:bg-white/10 transition"
+                                >
+                                  <div className="flex items-center gap-4 min-w-0">
+                                    <div
                                       className={[
-                                        "mt-1 h-4 w-4 rounded-full inline-block shrink-0 ring-1 ring-white/20",
-                                        dotColor(cur),
+                                        "relative z-10 h-12 w-12 rounded-full grid place-items-center shrink-0",
+                                        statusDotClass(eff),
                                       ].join(" ")}
-                                    />
+                                    >
+                                      {eff === "COMPLETED" ?
+                                        <img
+                                          src="/img/icon/checked 1.svg"
+                                          alt="completed"
+                                          className="w-6 h-6"
+                                        />
+                                      : eff === "IN_PROGRESS" ?
+                                        <img
+                                          src="/img/icon/bookmark.svg"
+                                          alt="in progress"
+                                          className="w-6 h-6"
+                                        />
+                                      : eff === "LOCKED" ?
+                                        "🔒"
+                                      : <img
+                                          src="/img/icon/time-left 1.svg"
+                                          alt="available"
+                                          className="w-6 h-6"
+                                        />
+                                      }
+                                    </div>
+
                                     <div className="min-w-0">
-                                      <p className="text-base font-semibold truncate">
+                                      <div className="text-lg font-semibold truncate">
                                         {v.title}
-                                      </p>
-                                      <p className="text-sm text-white/70 line-clamp-2">
+                                      </div>
+                                      <div className="text-white/60 text-sm truncate">
                                         {v.description}
-                                      </p>
-                                      <div className="mt-2 text-xs text-white/60">
-                                        {formatTime(v.completedAt)} /{" "}
-                                        {formatTime(v.duration)} • {pct}%
                                       </div>
                                     </div>
                                   </div>
 
-                                  <div className="text-sm text-white/80 shrink-0">
-                                    {formatTime(v.duration)}
+                                  <div className="text-white/80 text-lg shrink-0">
+                                    {v.duration}
                                   </div>
-                                </div>
-                              </button>
-                            );
-                          })}
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
-                      )}
-                    </li>
+                      </div>
+                    </PartRow>
                   );
                 })}
-              </ul>
-            )}
+            </div>
 
-            {mode === "note" && (
-              <div className="space-y-4">
-                <div className="rounded-2xl bg-white/5 ring-1 ring-white/10 p-4">
-                  <div className="text-xs text-white/60">Active video</div>
-                  <div className="mt-1 font-semibold truncate">
-                    {active?.video.title ?? "No active video"}
-                  </div>
-                  <div className="mt-1 text-xs text-white/60">
-                    {active ?
-                      `${formatTime(active.video.completedAt)} / ${formatTime(
-                        active.video.duration,
-                      )}`
-                    : ""}
-                  </div>
+            {/* RIGHT */}
+            <div className="space-y-4">
+              {/* COMPLETE */}
+              <div className="rounded-2xl bg-[#23213B]/70 border border-white/5 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.25)]">
+                <div className="flex items-end justify-between mb-4">
+                  <h3 className="text-3xl font-extrabold tracking-wide">
+                    {completedPercent}% COMPLETE
+                  </h3>
                 </div>
 
-                <div className="rounded-2xl bg-white/5 ring-1 ring-white/10 p-4 flex items-center justify-between">
-                  <div>
-                    <div className="font-semibold">Pause while typing</div>
-                    <div className="text-xs text-white/60">
-                      โฟกัสช่องพิมพ์แล้ววิดีโอจะหยุดอัตโนมัติ
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setPauseWhileTyping((v) => !v)}
-                    className={[
-                      "rounded-full px-4 py-2 text-xs font-semibold transition ring-1",
-                      pauseWhileTyping ?
-                        "bg-emerald-400 text-black ring-white/10"
-                      : "bg-white/10 text-white ring-white/10 hover:bg-white/15",
-                    ].join(" ")}
-                  >
-                    {pauseWhileTyping ? "ON" : "OFF"}
-                  </button>
+                <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                  <div
+                    className="h-full bg-[#FF8FA1] rounded-full"
+                    style={{ width: `${completedPercent}%` }}
+                  />
                 </div>
 
-                <div className="rounded-2xl bg-white/5 ring-1 ring-white/10 p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="font-semibold">Add Note</div>
-                    <div className="text-xs text-white/60">
-                      {activeNotes.length} notes
-                    </div>
-                  </div>
-
-                  <label className="mt-3 block text-xs text-white/70">
-                    Text
-                    <textarea
-                      className="mt-1 w-full rounded-xl bg-black/20 ring-1 ring-white/10 px-3 py-2 text-white min-h-[90px]"
-                      value={noteDraft.text}
-                      onChange={(e) =>
-                        setNoteDraft((d) => ({ ...d, text: e.target.value }))
-                      }
-                      onFocus={() => pauseWhileTyping && pauseAny()}
-                      placeholder="พิมพ์โน้ต... "
-                    />
-                  </label>
-
-                  <label className="mt-3 block text-xs text-white/70">
-                    Tags (comma separated)
-                    <input
-                      className="mt-1 w-full rounded-xl bg-black/20 ring-1 ring-white/10 px-3 py-2 text-white"
-                      value={noteDraft.tags}
-                      onChange={(e) =>
-                        setNoteDraft((d) => ({ ...d, tags: e.target.value }))
-                      }
-                      placeholder="grammar, verb, example"
-                    />
-                  </label>
-
-                  <div className="mt-3 flex justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!active || !activeVideoId) return;
-                        const text = noteDraft.text.trim();
-                        if (!text) return;
-
-                        const duration = Math.max(0, getDurationAny());
-                        const now = clamp(
-                          getNowTimeAny(),
-                          0,
-                          duration || Number.MAX_SAFE_INTEGER,
-                        );
-
-                        const tags = noteDraft.tags
-                          .split(",")
-                          .map((t) => t.trim())
-                          .filter(Boolean);
-
-                        const item: NoteItem = {
-                          id: uid(),
-                          videoId: activeVideoId,
-                          lessonId: active.lessonId,
-                          time: now,
-                          text,
-                          tags,
-                          createdAt: new Date().toISOString(),
-                        };
-
-                        setNotesByVideo((prev) => {
-                          const next = { ...prev };
-                          const arr =
-                            next[activeVideoId] ? [...next[activeVideoId]] : [];
-                          arr.unshift(item);
-                          next[activeVideoId] = arr;
-                          return next;
-                        });
-
-                        setNoteDraft((d) => ({ ...d, text: "" }));
-                      }}
-                      className="rounded-full bg-pink-400 px-4 py-2 text-sm font-semibold text-white hover:bg-pink-500"
-                    >
-                      Add Note
-                    </button>
-                  </div>
-                </div>
+                <p className="mt-3 text-white/70">
+                  {completedLessons} of {course.totalLessons} lessons completed
+                </p>
               </div>
-            )}
 
-            {mode === "all" && (
-              <AllNotesPanel
-                allNotes={allNotes}
-                videoTitleMap={useMemo(() => {
-                  const m = new Map<
-                    string,
-                    { lessonTitle: string; videoTitle: string }
-                  >();
-                  flatVideos.forEach((x) =>
-                    m.set(x.video.id, {
-                      lessonTitle: x.lessonTitle,
-                      videoTitle: x.video.title,
-                    }),
-                  );
-                  return m;
-                }, [flatVideos])}
-                onJump={(videoId, t) => {
-                  if (activeVideoId === videoId) {
-                    seekAny(t, true);
-                    return;
-                  }
-                  pendingSeekRef.current = { videoId, time: t, autoplay: true };
-                  setActiveVideoId(videoId);
-                  setMode("subject");
-                }}
-                onDelete={(videoId, noteId) => {
-                  setNotesByVideo((prev) => {
-                    const next = { ...prev };
-                    const arr = (next[videoId] ?? []).filter(
-                      (n) => n.id !== noteId,
-                    );
-                    if (arr.length === 0) delete next[videoId];
-                    else next[videoId] = arr;
-                    return next;
-                  });
-                }}
-              />
-            )}
+              {/* Teacher */}
+              <div className="rounded-2xl bg-[#23213B]/70 border border-white/5 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.25)]">
+                <div className="flex items-start gap-3">
+                  <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center">
+                    <span className="text-white/70">👤</span>
+                  </div>
+                  <div>
+                    <p className="text-white/80">อาจาร</p>
+                    <p className="font-semibold">{tutor.name}</p>
+                  </div>
+                </div>
+
+                <p className="mt-4 text-white/70 leading-relaxed whitespace-pre-line">
+                  {tutor.bio}
+                </p>
+              </div>
+
+              {/* Stats */}
+              <div className="rounded-2xl bg-[#23213B]/70 border border-white/5 p-3 space-y-3 text-white/85">
+                <StatRow
+                  iconSrc="./img/icon/customer 2 (1).svg"
+                  alt="students"
+                  text={course.totalStudents.toLocaleString()}
+                />
+                <StatRow
+                  iconSrc="./img/icon/Book open (1).svg"
+                  alt="lessons"
+                  text={`${course.totalLessons} Lessons`}
+                />
+                <StatRow
+                  iconSrc="./img/icon/Clock (1).svg"
+                  alt="duration"
+                  text={course.totalDuration}
+                />
+                <StatRow
+                  iconSrc="./img/icon/Star.svg"
+                  alt="rating"
+                  text={`${course.rating} Rating`}
+                />
+              </div>
+            </div>
           </div>
         </div>
-      </aside>
+      </div>
+    </section>
+  );
+}
+
+/* ------- Small Components ------- */
+function PartRow(props: {
+  title: string;
+  sub: string;
+  open: boolean;
+  onToggle: () => void;
+  children?: React.ReactNode;
+}) {
+  const { title, sub, open, onToggle, children } = props;
+  return (
+    <div className="rounded-2xl bg-[#23213B]/70 border border-white/5 px-6 py-5 shadow-[0_18px_50px_rgba(0,0,0,0.22)]">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between"
+      >
+        <div className="text-left">
+          <p className="text-xl lg:text-2xl font-semibold">{title}</p>
+          <p className="text-white/65 mt-1">{sub}</p>
+        </div>
+
+        <div className="h-10 w-10 rounded-full flex items-center justify-center">
+          <span className="text-2xl text-white/70">
+            {open ?
+              <img src="./img/icon/arrow-Up.svg" alt="" className="h-5 w-5" />
+            : <img src="./img/icon/arrow-down.svg" alt="" className="h-5 w-5" />
+            }
+          </span>
+        </div>
+      </button>
+
+      {open ?
+        <div>{children}</div>
+      : null}
     </div>
   );
 }
 
-/* ===================== All Notes UI ===================== */
-function AllNotesPanel(props: {
-  allNotes: NoteItem[];
-  videoTitleMap: Map<string, { lessonTitle: string; videoTitle: string }>;
-  onJump: (videoId: string, time: number) => void;
-  onDelete: (videoId: string, noteId: string) => void;
+function StatRow({
+  iconSrc,
+  text,
+  alt,
+}: {
+  iconSrc: string;
+  text: string;
+  alt: string;
 }) {
-  const { allNotes, videoTitleMap, onJump, onDelete } = props;
-  const [q, setQ] = useState("");
-
-  const filtered = useMemo(() => {
-    const qq = q.trim().toLowerCase();
-    if (!qq) return allNotes;
-    return allNotes.filter((n) => {
-      const meta = videoTitleMap.get(n.videoId);
-      const hay = [
-        n.text,
-        n.tags.join(" "),
-        meta?.lessonTitle ?? "",
-        meta?.videoTitle ?? "",
-      ]
-        .join(" ")
-        .toLowerCase();
-      return hay.includes(qq);
-    });
-  }, [allNotes, q, videoTitleMap]);
-
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="font-semibold">All Notes</div>
-        <div className="text-xs text-white/60">{filtered.length} items</div>
-      </div>
-
-      <input
-        className="w-full rounded-2xl bg-white/5 ring-1 ring-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40"
-        placeholder="Search notes, tags, lesson, video..."
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-      />
-
-      {filtered.length === 0 ?
-        <div className="rounded-2xl bg-white/5 ring-1 ring-white/10 p-4 text-white/70">
-          ไม่เจอโน้ต
-        </div>
-      : filtered.map((n) => {
-          const meta = videoTitleMap.get(n.videoId);
-          return (
-            <div
-              key={n.id}
-              className="rounded-2xl bg-white/5 ring-1 ring-white/10 p-4"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <div className="text-xs text-white/60 truncate">
-                    {meta?.lessonTitle ?? "Lesson"} •{" "}
-                    {meta?.videoTitle ?? "Video"}
-                  </div>
-                  <div className="mt-1 text-xs text-white/60">
-                    ⏱ {formatTime(n.time)}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => onJump(n.videoId, n.time)}
-                    className="text-xs bg-white/10 hover:bg-white/15 px-3 py-1 rounded-full"
-                  >
-                    Jump
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => onDelete(n.videoId, n.id)}
-                    className="text-xs bg-red-400/80 hover:bg-red-400 px-3 py-1 rounded-full text-black font-semibold"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-
-              <div className="mt-2 text-sm">{n.text}</div>
-
-              {n.tags.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {n.tags.map((t) => (
-                    <span
-                      key={t}
-                      className="text-[10px] px-2 py-1 rounded-full bg-white/10 text-white/80"
-                    >
-                      #{t}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })
-      }
+    <div className="flex items-center gap-3">
+      <img src={iconSrc} alt={alt} className="w-6 h-6 object-contain" />
+      <div className="text-lg">{text}</div>
     </div>
   );
 }

@@ -55,14 +55,15 @@ type TrackerLessonSection = { lessonId: string; videos: TrackerVideo[] };
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
+
 function formatTime(seconds: number) {
   const s = Math.max(0, Math.floor(seconds));
   const mm = Math.floor(s / 60);
   const ss = s % 60;
   return `${mm}:${String(ss).padStart(2, "0")}`;
 }
+
 function parseMMSS(s: string) {
-  // "10:54" -> 654
   const m = String(s || "")
     .trim()
     .match(/^(\d+):(\d{1,2})$/);
@@ -71,9 +72,11 @@ function parseMMSS(s: string) {
   const ss = Number(m[2] || 0);
   return mm * 60 + ss;
 }
+
 function makeProgressKey(courseId?: string, userId?: string) {
   return `learney_progress_${courseId || "demoCourse"}_${userId || "anon"}`;
 }
+
 function loadProgress(key: string): TrackerLessonSection[] | null {
   try {
     const raw = localStorage.getItem(key);
@@ -89,7 +92,7 @@ function loadProgress(key: string): TrackerLessonSection[] | null {
 /** ✅ เอา progress จาก CourseTry มาทับบน mock ของ InfoCourse (match ตาม video.id) */
 function applyTrackerToInfoLessonProgress(
   infoLessons: LessonProgress[],
-  tracker: TrackerLessonSection[]
+  tracker: TrackerLessonSection[],
 ): LessonProgress[] {
   const trackerVideoMap = new Map<string, TrackerVideo>();
   tracker.forEach((l) => l.videos.forEach((v) => trackerVideoMap.set(v.id, v)));
@@ -103,7 +106,7 @@ function applyTrackerToInfoLessonProgress(
         ...v,
         completedAt: tv.completedAt,
         status: tv.status,
-        duration: formatTime(tv.duration), // ให้ duration โชว์แบบ "mm:ss"
+        duration: formatTime(tv.duration),
       };
     }),
   }));
@@ -113,16 +116,16 @@ function applyTrackerToInfoLessonProgress(
 function computeOverallPctFromInfoLessons(lessons: LessonProgress[]) {
   const total = lessons.reduce(
     (acc, l) => acc + l.videos.reduce((a, v) => a + parseMMSS(v.duration), 0),
-    0
+    0,
   );
   const done = lessons.reduce(
     (acc, l) =>
       acc +
       l.videos.reduce(
         (a, v) => a + clamp(v.completedAt, 0, parseMMSS(v.duration)),
-        0
+        0,
       ),
-    0
+    0,
   );
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   return { total, done, pct };
@@ -146,6 +149,20 @@ function statusDotClass(status: ProgressStatus) {
       return "bg-[#464B9F]";
     default:
       return "bg-white/20";
+  }
+}
+
+/** ✅ สีเส้น (เหมือน CourseTry concept) */
+function statusLineClass(status: ProgressStatus) {
+  switch (status) {
+    case "COMPLETED":
+      return "bg-[#FF8FA1]";
+    case "IN_PROGRESS":
+      return "bg-[#FFEE91]";
+    case "AVAILABLE":
+      return "bg-[#464B9F]";
+    default:
+      return "bg-white/15";
   }
 }
 
@@ -175,10 +192,8 @@ function pickHero(lessons: LessonProgress[]) {
     video: vIP ?? null,
     progressText: `PART ${lIP.position} | ${String(lIP.position).padStart(
       2,
-      "0"
-    )} - ${lIP.title} (${
-      sortedVideos[0]?.duration ?? "00:00"
-    }) : ${done} / ${total}`,
+      "0",
+    )} - ${lIP.title} (${sortedVideos[0]?.duration ?? "00:00"}) : ${done} / ${total}`,
   };
 }
 
@@ -353,7 +368,7 @@ export default function InfoCourse(props?: {
   /** ✅ overlay จาก CourseTry progress (ถ้ามี) */
   const progressKey = useMemo(
     () => makeProgressKey(courseId, userId),
-    [courseId, userId]
+    [courseId, userId],
   );
   const storedTracker = useMemo(() => loadProgress(progressKey), [progressKey]);
 
@@ -365,22 +380,23 @@ export default function InfoCourse(props?: {
   /** ✅ % แบบเดียวกับ CourseTry */
   const overall = useMemo(
     () => computeOverallPctFromInfoLessons(lessonProgress),
-    [lessonProgress]
+    [lessonProgress],
   );
 
   /** ✅ completed lesson count แบบเดียวกัน */
   const completedLessons = useMemo(
     () => lessonProgress.filter(isLessonCompleted).length,
-    [lessonProgress]
+    [lessonProgress],
   );
 
-  const completedPercent = overall.pct; // <-- นี่แหละ “หลอด COMPLETE” ให้เท่ากับ PROGRESS
+  const completedPercent = overall.pct;
 
   const hero = useMemo(() => pickHero(lessonProgress), [lessonProgress]);
 
   const [openLessonIds, setOpenLessonIds] = useState<Set<string>>(
-    () => new Set()
+    () => new Set(),
   );
+
   function toggleLesson(lessonId: string) {
     setOpenLessonIds((prev) => {
       const next = new Set(prev);
@@ -415,11 +431,11 @@ export default function InfoCourse(props?: {
                 </p>
 
                 <h2 className="text-3xl lg:text-4xl font-bold mb-3">
-                  {hero?.video
-                    ? `${hero.lesson.position}.${String(
-                        hero.video.position
-                      ).padStart(2, "0")} - ${hero.video.title}`
-                    : "-"}
+                  {hero?.video ?
+                    `${hero.lesson.position}.${String(
+                      hero.video.position,
+                    ).padStart(2, "0")} - ${hero.video.title}`
+                  : "-"}
                 </h2>
 
                 <p className="text-white/70 leading-relaxed mb-6">
@@ -464,68 +480,135 @@ export default function InfoCourse(props?: {
                       open={isOpen}
                       onToggle={() => toggleLesson(l.lessonId)}
                     >
-                      {/* Videos list (เหมือนภาพ + กดไป CourseTry ได้) */}
-                      <div className="mt-4 rounded-2xl bg-white/5 border border-white/5 p-4">
-                        <div className="relative">
-                          <div className="absolute left-[2.1rem] top-3 bottom-3 w-1 bg-white/15 rounded-full" />
-                          <div className="space-y-4">
-                            {l.videos
-                              .slice()
-                              .sort((a, b) => a.position - b.position)
-                              .map((v) => (
-                                <button
+                      {/* Videos list (timeline เส้นต่อกัน) */}
+                      <div className="mt-4 rounded-2xl p-4">
+                        <div>
+                          {l.videos
+                            .slice()
+                            .sort((a, b) => a.position - b.position)
+                            .map((v, idx, arr) => {
+                              const prev = idx > 0 ? arr[idx - 1] : null;
+
+                              const topStatus = prev?.status ?? v.status; // สีเส้นบน
+                              const bottomStatus = v.status; // สีเส้นล่าง
+
+                              const showTop = idx !== 0;
+                              const showBottom = idx !== arr.length - 1;
+
+                              return (
+                                // ✅ ทำช่องว่างด้วย padding-bottom แทน margin gap
+                                <div
                                   key={v.id}
-                                  type="button"
-                                  onClick={() =>
-                                    navigate("/courses", {
-                                      state: {
-                                        courseId,
-                                        userId,
-                                        lessonId: l.lessonId,
-                                        videoId: v.id,
-                                      },
-                                    })
+                                  className={
+                                    idx !== arr.length - 1 ? "pb-4" : "pb-0"
                                   }
-                                  className="
-                                    w-full text-left
-                                    flex items-center justify-between gap-4
-                                    rounded-2xl px-3 py-3
-                                    hover:bg-white/5 active:bg-white/10
-                                    transition
-                                  "
                                 >
-                                  <div className="flex items-center gap-4 min-w-0">
-                                    <div
-                                      className={[
-                                        "relative z-10 h-12 w-12 rounded-full grid place-items-center shrink-0",
-                                        statusDotClass(v.status),
-                                      ].join(" ")}
-                                    >
-                                      {v.status === "COMPLETED"
-                                        ? "📖"
-                                        : v.status === "IN_PROGRESS"
-                                        ? "🕒"
-                                        : v.status === "LOCKED"
-                                        ? "🔒"
-                                        : "▶"}
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      navigate("/courses", {
+                                        state: {
+                                          courseId,
+                                          userId,
+                                          lessonId: l.lessonId,
+                                          videoId: v.id,
+                                        },
+                                      })
+                                    }
+                                    className="
+              w-full text-left
+              flex items-stretch justify-between gap-4
+              rounded-2xl px-3 py-3
+              hover:bg-white/5 active:bg-white/10
+              transition
+            "
+                                  >
+                                    <div className="flex items-stretch gap-4 min-w-0">
+                                      {/* ✅ Timeline column */}
+                                      <div className="relative w-12 shrink-0">
+                                        {/* base line (จาง) — ยื่นออกไปเชื่อมช่องว่าง */}
+                                        <div
+                                          className="
+                    absolute left-1/2 -translate-x-1/2
+                    top-[-16px] bottom-[-16px]
+                    w-1 bg-white/15 rounded-full
+                  "
+                                        />
+
+                                        {/* top segment (สีตาม prev) */}
+                                        {/* top segment */}
+                                        {showTop && (
+                                          <div
+                                            className={[
+                                              "absolute left-1/2 -translate-x-1/2",
+                                              "top-[-16px] bottom-[calc(50%+24px)] w-1 rounded-full",
+                                              statusLineClass(topStatus),
+                                            ].join(" ")}
+                                          />
+                                        )}
+
+                                        {/* bottom segment */}
+                                        {showBottom && (
+                                          <div
+                                            className={[
+                                              "absolute left-1/2 -translate-x-1/2",
+                                              "top-[calc(50%+24px)] bottom-[-16px] w-1 rounded-full",
+                                              statusLineClass(bottomStatus),
+                                            ].join(" ")}
+                                          />
+                                        )}
+
+                                        {/* dot */}
+                                        <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2">
+                                          <div
+                                            className={[
+                                              "relative z-10 h-12 w-12 rounded-full grid place-items-center",
+                                              statusDotClass(v.status),
+                                            ].join(" ")}
+                                          >
+                                            {v.status === "COMPLETED" ?
+                                              <img
+                                                src="/img/icon/checked 1.svg"
+                                                alt="completed"
+                                                className="w-6 h-6"
+                                              />
+                                            : v.status === "IN_PROGRESS" ?
+                                              <img
+                                                src="/img/icon/bookmark.svg"
+                                                alt="in progress"
+                                                className="w-6 h-6"
+                                              />
+                                            : v.status === "LOCKED" ?
+                                              "🔒"
+                                            : <img
+                                                src="/img/icon/time-left 1.svg"
+                                                alt="available"
+                                                className="w-6 h-6"
+                                              />
+                                            }
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* text */}
+                                      <div className="min-w-0 py-1">
+                                        <div className="text-lg font-semibold truncate">
+                                          {v.title}
+                                        </div>
+                                        <div className="text-white/60 text-sm truncate">
+                                          {v.description}
+                                        </div>
+                                      </div>
                                     </div>
 
-                                    <div className="min-w-0">
-                                      <div className="text-lg font-semibold truncate">
-                                        {v.title}
-                                      </div>
-                                      <div className="text-white/60 text-sm truncate">
-                                        {v.description}
-                                      </div>
+                                    {/* duration */}
+                                    <div className="text-white/80 text-lg shrink-0 flex items-center">
+                                      {v.duration}
                                     </div>
-                                  </div>
-
-                                  <div className="text-white/80 text-lg shrink-0">
-                                    {v.duration}
-                                  </div>
-                                </button>
-                              ))}
-                          </div>
+                                  </button>
+                                </div>
+                              );
+                            })}
                         </div>
                       </div>
                     </PartRow>
@@ -535,7 +618,7 @@ export default function InfoCourse(props?: {
 
             {/* RIGHT */}
             <div className="space-y-4">
-              {/* ✅ COMPLETE BAR = ใช้ค่าเดียวกับ PROGRESS */}
+              {/* COMPLETE */}
               <div className="rounded-2xl bg-[#23213B]/70 border border-white/5 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.25)]">
                 <div className="flex items-end justify-between mb-4">
                   <h3 className="text-3xl font-extrabold tracking-wide">
@@ -572,21 +655,30 @@ export default function InfoCourse(props?: {
                 </p>
               </div>
 
-              {/* Stats */}
-              <div className="rounded-2xl bg-[#23213B]/70 border border-white/5 p-6 space-y-3 text-white/85">
+              {/* Stats (ไอคอนเป็นรูปภาพ) */}
+              <div className="rounded-2xl bg-[#23213B]/70 border border-white/5 p-3 space-y-3 text-white/85">
                 <StatRow
-                  icon="👥"
+                  iconSrc="./img/icon/customer 2 (1).svg"
+                  alt="students"
                   text={course.totalStudents.toLocaleString()}
                 />
-                <StatRow icon="📚" text={`${course.totalLessons} Lessons`} />
-                <StatRow icon="⏱️" text={course.totalDuration} />
-                <StatRow icon="⭐" text={`${course.rating} Rating`} />
+                <StatRow
+                  iconSrc="./img/icon/Book open (1).svg"
+                  alt="lessons"
+                  text={`${course.totalLessons} Lessons`}
+                />
+                <StatRow
+                  iconSrc="./img/icon/Clock (1).svg"
+                  alt="duration"
+                  text={course.totalDuration}
+                />
+                <StatRow
+                  iconSrc="./img/icon/Star.svg"
+                  alt="rating"
+                  text={`${course.rating} Rating`}
+                />
               </div>
             </div>
-          </div>
-
-          <div className="mt-8 text-xs text-white/40">
-            progressKey: {progressKey}
           </div>
         </div>
       </div>
@@ -615,20 +707,35 @@ function PartRow(props: {
           <p className="text-white/65 mt-1">{sub}</p>
         </div>
 
-        <div className="h-10 w-10 rounded-full bg-white/5 border border-white/5 flex items-center justify-center">
-          <span className="text-2xl text-white/70">{open ? "⌃" : "⌄"}</span>
+        <div className="h-10 w-10 rounded-full flex items-center justify-center">
+          <span className="text-2xl text-white/70">
+            {open ?
+              <img src="./img/icon/arrow-Up.svg" alt="" className="h-5 w-5" />
+            : <img src="./img/icon/arrow-down.svg" alt="" className="h-5 w-5" />
+            }
+          </span>
         </div>
       </button>
 
-      {open ? <div>{children}</div> : null}
+      {open ?
+        <div>{children}</div>
+      : null}
     </div>
   );
 }
 
-function StatRow({ icon, text }: { icon: string; text: string }) {
+function StatRow({
+  iconSrc,
+  text,
+  alt,
+}: {
+  iconSrc: string;
+  text: string;
+  alt: string;
+}) {
   return (
     <div className="flex items-center gap-3">
-      <div className="w-6 text-center">{icon}</div>
+      <img src={iconSrc} alt={alt} className="w-6 h-6 object-contain" />
       <div className="text-lg">{text}</div>
     </div>
   );
