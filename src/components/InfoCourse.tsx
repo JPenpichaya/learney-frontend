@@ -467,63 +467,71 @@ export default function InfoCourse(props?: {
                       {/* Videos list (เหมือนภาพ + กดไป CourseTry ได้) */}
                       <div className="mt-4 rounded-2xl bg-white/5 border border-white/5 p-4">
                         <div className="relative">
-                          <div className="absolute left-[2.1rem] top-3 bottom-3 w-1 bg-white/15 rounded-full" />
                           <div className="space-y-4">
                             {l.videos
                               .slice()
                               .sort((a, b) => a.position - b.position)
-                              .map((v) => (
-                                <button
-                                  key={v.id}
-                                  type="button"
-                                  onClick={() =>
-                                    navigate("/courses", {
-                                      state: {
-                                        courseId,
-                                        userId,
-                                        lessonId: l.lessonId,
-                                        videoId: v.id,
-                                      },
-                                    })
-                                  }
-                                  className="
-                                    w-full text-left
-                                    flex items-center justify-between gap-4
-                                    rounded-2xl px-3 py-3
-                                    hover:bg-white/5 active:bg-white/10
-                                    transition
-                                  "
-                                >
-                                  <div className="flex items-center gap-4 min-w-0">
+                              .map((v, i, arr) => (
+                                <div key={v.id} className="relative">
+                                  {i < arr.length - 1 && (
                                     <div
-                                      className={[
-                                        "relative z-10 h-12 w-12 rounded-full grid place-items-center shrink-0",
-                                        statusDotClass(v.status),
-                                      ].join(" ")}
-                                    >
-                                      {v.status === "COMPLETED"
-                                        ? "📖"
-                                        : v.status === "IN_PROGRESS"
-                                        ? "🕒"
-                                        : v.status === "LOCKED"
-                                        ? "🔒"
-                                        : "▶"}
+                                      className={`absolute left-9 top-1/2 h-[calc(100%+1rem)] w-1 -translate-x-1/2 z-0 ${statusDotClass(
+                                        v.status
+                                      )}`}
+                                    />
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      navigate("/courses", {
+                                        state: {
+                                          courseId,
+                                          userId,
+                                          lessonId: l.lessonId,
+                                          videoId: v.id,
+                                        },
+                                      })
+                                    }
+                                    className="
+                                      relative z-10
+                                      w-full text-left
+                                      flex items-center justify-between gap-4
+                                      rounded-2xl px-3 py-3
+                                      hover:bg-white/5 active:bg-white/10
+                                      transition
+                                    "
+                                  >
+                                    <div className="flex items-center gap-4 min-w-0">
+                                      <div
+                                        className={[
+                                          "relative z-10 h-12 w-12 rounded-full grid place-items-center shrink-0",
+                                          statusDotClass(v.status),
+                                        ].join(" ")}
+                                      >
+                                        {v.status === "COMPLETED"
+                                          ? "📖"
+                                          : v.status === "IN_PROGRESS"
+                                          ? "🕒"
+                                          : v.status === "LOCKED"
+                                          ? "🔒"
+                                          : "▶"}
+                                      </div>
+
+                                      <div className="min-w-0">
+                                        <div className="text-lg font-semibold truncate">
+                                          {v.title}
+                                        </div>
+                                        <div className="text-white/60 text-sm truncate">
+                                          {v.description}
+                                        </div>
+                                      </div>
                                     </div>
 
-                                    <div className="min-w-0">
-                                      <div className="text-lg font-semibold truncate">
-                                        {v.title}
-                                      </div>
-                                      <div className="text-white/60 text-sm truncate">
-                                        {v.description}
-                                      </div>
+                                    <div className="text-white/80 text-lg shrink-0">
+                                      {v.duration}
                                     </div>
-                                  </div>
-
-                                  <div className="text-white/80 text-lg shrink-0">
-                                    {v.duration}
-                                  </div>
-                                </button>
+                                  </button>
+                                </div>
                               ))}
                           </div>
                         </div>
