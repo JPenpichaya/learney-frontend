@@ -12,7 +12,6 @@ export default function SuccessfullyBuy() {
 
   // ✅ ปลายทางหลังชำระเงินสำเร็จ
   const redirectTo = useMemo(() => {
-    // ส่ง courseId ไปหน้า InfoCourse ด้วย
     return courseId ?
         `/InfoCourse?courseId=${encodeURIComponent(courseId)}`
       : "/InfoCourse";

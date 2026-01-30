@@ -25,18 +25,18 @@ export default function App() {
         <main className="ibm-plex-sans-thai-light">
           <Routes>
             {/* หน้า Home */}
-            <Route path="/" element={<Login />} />
-
+            <Route path="/" element={<Mainpage />} />
+            <Route path="/Mainpage" element={<Mainpage />} />
             {/* หน้า Login */}
             <Route path="/login" element={<Login />} />
-            <Route path="/Mainpage" element={<Mainpage />} />
+
             <Route path="/CoursesPage" element={<CoursesPage />} />
             <Route path="/InfoCourse" element={<InfoCourse />} />
             <Route path="/SuccessfullyBuy" element={<SuccessfullyBuy />} />
             <Route path="/ErorrPage" element={<ErorrPage />} />
             <Route path="/CouresNavbar" element={<Coures />} />
             {/* คอร์สเรียน */}
-            <Route path="/call" element={<CallPage identity="anonymous" />} />
+
             {/* <Route path="/reviews" element={<VideoSection />} /> */}
             <Route path="/courses" element={<LessonVideoTracker />} />
 

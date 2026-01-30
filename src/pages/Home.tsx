@@ -599,6 +599,17 @@ function Home() {
   );
 }
 
+function Test() {
+  return (
+    <div className="w-screen min-h-screen grid grid-cols-2 p-10 gap-2 bg-white">
+      <div className="w-full h-full bg-amber-500 text-center justify-items-center">
+        Test
+      </div>
+      <div className="w-full h-full bg-amber-500"></div>
+    </div>
+  );
+}
+
 export default function Mainpage() {
   return (
     <div className="max-w-screen w-full bg-center min-h-screen bg-cover bg-[#070D2D]">
@@ -610,6 +621,7 @@ export default function Mainpage() {
           <Intro />
           <Detail />
           <Coures />
+          {/* <Test /> */}
           <ReviewsContract />
         </div>
       </div>
