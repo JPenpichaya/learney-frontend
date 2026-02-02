@@ -1,16 +1,5 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
-import { TokenProvider } from './context/TokenContext.tsx';
-import { BrowserRouter } from "react-router-dom";
+import { createRoot } from "react-dom/client";
+import App from "./App.tsx";
+import "./index.css";
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <TokenProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </TokenProvider>
-  </StrictMode>,
-)
+createRoot(document.getElementById("root")!).render(<App />);

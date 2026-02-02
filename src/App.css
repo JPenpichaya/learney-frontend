@@ -1,92 +1,42 @@
-@import "tailwindcss";
-
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  scrollbar-width: none;
-
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
 }
 
-h2 {
-  font-size: 1.4rem;
-  font-weight: 600;
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
 }
 
-.box {
-  border-image: linear-gradient(180deg, #F1F069, #F59B58, #E7688F) 1;
-  border-radius: 4rem;
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-
-
-.Head1 {
-  font-size: 2.6rem;
-  font-weight: 600;
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
 }
 
-.ibm-plex-sans-thai-thin {
-  font-family: "IBM Plex Sans Thai", sans-serif;
-  font-weight: 100;
-  font-style: normal;
+.card {
+  padding: 2em;
 }
 
-.ibm-plex-sans-thai-extralight {
-  font-family: "IBM Plex Sans Thai", sans-serif;
-  font-weight: 200;
-  font-style: normal;
-}
-
-.ibm-plex-sans-thai-light {
-  font-family: "IBM Plex Sans Thai", sans-serif;
-  font-weight: 300;
-  font-style: normal;
-}
-
-.ibm-plex-sans-thai-regular {
-  font-family: "IBM Plex Sans Thai", sans-serif;
-  font-weight: 400;
-  font-style: normal;
-}
-
-.ibm-plex-sans-thai-medium {
-  font-family: "IBM Plex Sans Thai", sans-serif;
-  font-weight: 500;
-  font-style: normal;
-}
-
-.ibm-plex-sans-thai-semibold {
-  font-family: "IBM Plex Sans Thai", sans-serif;
-  font-weight: 600;
-  font-style: normal;
-}
-
-.ibm-plex-sans-thai-bold {
-  font-family: "IBM Plex Sans Thai", sans-serif;
-  font-weight: 700;
-  font-style: normal;
-}
-
-.gradient-text {
-  font-weight: 700;
-  background: linear-gradient(90deg, #F9C6A2, #E9A8B9);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.gradient-text-light {
-  font-weight: 500;
-  background: linear-gradient(90deg, #F9C6A2, #E9A8B9);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.SHtext {
-  text-shadow: black 0em 0em 0.4em;
+.read-the-docs {
+  color: #888;
 }

@@ -1,50 +1,27 @@
-import { Routes, Route, Navigate } from "react-router-dom";
-import Mainpage from "./pages/Home.tsx";
-import Login from "./pages/Login.tsx";
-import { CallPage } from "./components/VideoCall";
-// import VideoSection from "./components/Corse.tsx";
-import { TokenProvider } from "./context/TokenContext";
-import Menubar from "./components/Navber.tsx";
-import "./index.css";
-import "./App.css";
-import LessonVideoTracker from "./components/CourseTry.tsx";
-import InfoCourse from "./components/InfoCourse.tsx";
-import CoursesPage from "./pages/CoursePage.tsx";
-import SuccessfullyBuy from "./components/successfully.tsx";
-import ErorrPage from "./components/ErorrPage.tsx";
-import Coures from "./pages/Home.tsx";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
 
-export default function App() {
-  return (
-    <TokenProvider>
-      <div className="min-h-screen max-w-screen overflow-x-hidden flex flex-col">
-        <header className="sticky top-0 z-50">
-          <Menubar />
-        </header>
+const queryClient = new QueryClient();
 
-        <main className="ibm-plex-sans-thai-light">
-          <Routes>
-            {/* หน้า Home */}
-            <Route path="/" element={<Mainpage />} />
-            <Route path="/Mainpage" element={<Mainpage />} />
-            {/* หน้า Login */}
-            <Route path="/login" element={<Login />} />
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
-            <Route path="/CoursesPage" element={<CoursesPage />} />
-            <Route path="/InfoCourse" element={<InfoCourse />} />
-            <Route path="/SuccessfullyBuy" element={<SuccessfullyBuy />} />
-            <Route path="/ErorrPage" element={<ErorrPage />} />
-            <Route path="/CouresNavbar" element={<Coures />} />
-            {/* คอร์สเรียน */}
-
-            {/* <Route path="/reviews" element={<VideoSection />} /> */}
-            <Route path="/courses" element={<LessonVideoTracker />} />
-
-            {/* 404 */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </main>
-      </div>
-    </TokenProvider>
-  );
-}
+export default App;

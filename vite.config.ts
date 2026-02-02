@@ -1,22 +1,21 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite';
-import path from 'path'; // ✅ ต้องนำเข้า path ด้วย
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react-swc";
+import path from "path";
+import { componentTagger } from "lovable-tagger";
 
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
+// https://vitejs.dev/config/
+export default defineConfig(({ mode }) => ({
+  server: {
+    host: "::",
+    port: 8080,
+    hmr: {
+      overlay: false,
+    },
+  },
+  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src'), // ✅ alias `@` ชี้ไปที่โฟลเดอร์ src
+      "@": path.resolve(__dirname, "./src"),
     },
   },
-  server: {
-    proxy: {
-      '/api': {
-        target: process.env.API_BASE_URL,
-        changeOrigin: true,
-      },
-    },
-  },
-});
+}));
