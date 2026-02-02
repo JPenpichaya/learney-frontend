@@ -60,13 +60,16 @@ const FinalCTA = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" variant="hero" className="text-lg px-8 py-6 group shadow-[0_0_40px_hsl(45,80%,50%,0.3)]">
-              เริ่มคอร์สเต็ม พร้อมพัฒนาอย่างเห็นผล
-              <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-            </Button>
-            <Button size="lg" variant="heroOutline" className="text-lg px-8 py-6 backdrop-blur-md">
-              ลองเรียน 1 บาทก่อน
-            </Button>
+            <a href="#Courespackage">
+                <Button size="lg" variant="hero" className="text-lg px-8 py-6 group shadow-[0_0_40px_hsl(45,80%,50%,0.3)]">
+                    เริ่มคอร์สเต็ม พร้อมพัฒนาอย่างเห็นผล
+                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                </Button>
+            </a>
+              <a href="#Courespackage"><Button size="lg" variant="heroOutline" className="text-lg px-8 py-6 backdrop-blur-md">
+                  ลองเรียน 1 บาทก่อน
+              </Button></a>
+
           </div>
 
           <p className="text-primary-foreground/60 text-sm mt-8 flex items-center justify-center gap-2">

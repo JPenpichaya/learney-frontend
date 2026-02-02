@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Sparkles, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const FloatingStar = ({ delay, left, top, size = 16 }: { delay: number; left: string; top: string; size?: number }) => (
   <div 
@@ -16,8 +17,10 @@ const FloatingStar = ({ delay, left, top, size = 16 }: { delay: number; left: st
 );
 
 const PricingSection = () => {
+  const navigate = useNavigate();
+
   return (
-    <section className="py-20 relative overflow-hidden" style={{ background: 'linear-gradient(to bottom, hsl(258, 50%, 22%), hsl(258, 55%, 16%))' }}>
+    <section id="Courespackage" className="py-20 relative overflow-hidden" style={{ background: 'linear-gradient(to bottom, hsl(258, 50%, 22%), hsl(258, 55%, 16%))' }}>
       {/* Floating Stars */}
       <FloatingStar delay={0.5} left="10%" top="15%" size={18} />
       <FloatingStar delay={1.3} left="88%" top="20%" size={14} />
@@ -51,7 +54,7 @@ const PricingSection = () => {
 
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {/* Trial Package */}
-          <div className="rounded-2xl p-8 backdrop-blur-md border transition-all duration-300 hover:scale-105" style={{ background: 'hsla(258, 50%, 25%, 0.4)', borderColor: 'hsla(258, 50%, 50%, 0.3)' }}>
+          <div id="trial" className="rounded-2xl p-8 backdrop-blur-md border transition-all duration-300 hover:scale-105" style={{ background: 'hsla(258, 50%, 25%, 0.4)', borderColor: 'hsla(258, 50%, 50%, 0.3)' }}>
             <div className="flex items-center gap-2 mb-4">
               <span className="text-2xl">🪙</span>
               <span className="text-sm font-medium" style={{ color: 'hsl(258, 30%, 70%)' }}>
@@ -92,6 +95,7 @@ const PricingSection = () => {
             <Button 
               variant="outline" 
               size="lg" 
+              onClick={() => navigate("/Login")}
               className="w-full border-2 transition-all duration-300"
               style={{ 
                 borderColor: 'hsla(258, 50%, 60%, 0.5)',
@@ -150,6 +154,7 @@ const PricingSection = () => {
 
             <Button 
               size="lg" 
+              onClick={() => navigate("/Login")}
               className="w-full transition-all duration-300"
               style={{ 
                 background: 'linear-gradient(135deg, hsl(45, 90%, 55%), hsl(35, 90%, 50%))',

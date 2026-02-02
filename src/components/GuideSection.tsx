@@ -16,7 +16,7 @@ const FloatingStar = ({ delay, left, top, size = 16 }: { delay: number; left: st
 
 const GuideSection = () => {
   return (
-    <section className="py-20 relative overflow-hidden" style={{ background: 'linear-gradient(to bottom, hsl(258, 60%, 12%), hsl(258, 55%, 18%))' }}>
+    <section id="AboutUs" className="py-20 relative overflow-hidden" style={{ background: 'linear-gradient(to bottom, hsl(258, 60%, 12%), hsl(258, 55%, 18%))' }}>
       {/* Floating Stars */}
       <FloatingStar delay={0} left="5%" top="10%" size={20} />
       <FloatingStar delay={1.5} left="90%" top="15%" size={14} />

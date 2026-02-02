@@ -10,22 +10,24 @@ import NoFeedbackSection from "@/components/NoFeedbackSection";
 import SuccessSection from "@/components/SuccessSection";
 import FinalCTA from "@/components/FinalCTA";
 import Footer from "@/components/Footer";
+import Navbar from "@/components/Navbar";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background">
-      <HeroSection />
-      <ProblemSection />
-      <GuideSection />
-      <PlanSection />
-      <WhyDifferentSection />
-      <TestimonialsSection />
-      <PricingSection />
-      <ComparisonTable />
-      <NoFeedbackSection />
-      <SuccessSection />
-      <FinalCTA />
-      <Footer />
+    <div className="min-h-screen bg-background ">
+        <Navbar />
+        <HeroSection />
+        <ProblemSection />
+        <GuideSection />
+        <PlanSection />
+        <WhyDifferentSection />
+        <TestimonialsSection />
+        <PricingSection />
+        <ComparisonTable />
+        <NoFeedbackSection />
+        <SuccessSection />
+        <FinalCTA />
+        <Footer />
     </div>
   );
 };

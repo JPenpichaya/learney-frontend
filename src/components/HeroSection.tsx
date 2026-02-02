@@ -17,7 +17,7 @@ const FloatingStar = ({ className, delay, size = 4 }: { className?: string; dela
 
 const HeroSection = () => {
   return (
-    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+    <section id="Home" className=" relative min-h-[90vh] flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0">
         <img
@@ -45,14 +45,14 @@ const HeroSection = () => {
 
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 py-20 text-center">
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className=" max-w-3xl mx-auto space-y-6">
           {/* Glassmorphism badge */}
           <div className="inline-flex items-center gap-2 bg-primary/20 backdrop-blur-md border border-primary/30 text-primary-foreground px-4 py-2 rounded-full text-sm font-medium mb-4">
             <Sparkles className="w-4 h-4 text-[hsl(45,80%,60%)]" />
             เส้นทางการเรียนที่ชัดเจน
           </div>
 
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight drop-shadow-lg">
+          <h1 className="ibm-plex-sans-thai-bold text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight drop-shadow-lg">
             เรียนภาษาอังกฤษ
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-[hsl(280,90%,75%)] to-[hsl(45,80%,60%)]">
@@ -60,19 +60,20 @@ const HeroSection = () => {
             </span>
           </h1>
           
-          <p className="text-lg md:text-xl text-primary-foreground/90 max-w-2xl mx-auto leading-relaxed">
+          <p className="ibm-plex-sans-thai-extralight text-lg md:text-xl text-primary-foreground/90 max-w-2xl mx-auto leading-relaxed">
             คอร์สออนไลน์ที่มีเส้นทางการเรียนชัดเจน เรียนตามจังหวะของตัวเอง
             <br className="hidden md:block" />
             พร้อมครูให้ Feedback งานในแพ็กเกจเต็ม
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-            <Button size="lg" variant="hero" className="text-lg px-8 py-6 shadow-[0_0_30px_hsl(var(--primary)/0.4)]">
-              เริ่มเรียนเลย
-            </Button>
-            <Button size="lg" variant="heroOutline" className="text-lg px-8 py-6 backdrop-blur-md">
-              ลองเรียน 1 บาท
-            </Button>
+            <a href="#Courespackage"><Button size="lg" variant="hero" className="text-lg px-8 py-6 shadow-[0_0_30px_hsl(var(--primary)/0.4)]">
+                เริ่มเรียนเลย
+            </Button></a>
+            <a href="#Courespackage"><Button size="lg" variant="heroOutline" className="text-lg px-8 py-6 backdrop-blur-md">
+                ลองเรียน 1 บาท
+            </Button></a>
+
           </div>
 
           <p className="text-primary-foreground/70 text-sm pt-2 flex items-center justify-center gap-2">

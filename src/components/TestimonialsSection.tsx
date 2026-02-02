@@ -52,7 +52,7 @@ const FloatingStar = ({
 
 const TestimonialsSection = () => {
   return (
-    <section className="relative py-20 overflow-hidden bg-gradient-to-b from-[hsl(260,60%,15%)] via-[hsl(255,50%,25%)] to-[hsl(250,45%,20%)]">
+    <section id="Reviews" className="relative py-20 overflow-hidden bg-gradient-to-b from-[hsl(260,60%,15%)] via-[hsl(255,50%,25%)] to-[hsl(250,45%,20%)]">
       {/* Dreamy background effects */}
       <div className="absolute inset-0">
         {/* Gradient orbs */}
